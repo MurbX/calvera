@@ -12,9 +12,24 @@ const geistSans = Geist({
 })
 
 export const metadata: Metadata = {
+  metadataBase: new URL(
+    process.env.NEXT_PUBLIC_SITE_URL ?? 'https://calvera.vercel.app',
+  ),
   title: 'Calvera Tech Solutions — Power Your Kenya Home',
   description:
     'Solar panels, inverters, batteries and full kits delivered & installed across Kenya. Build your system with our solar calculator.',
+  icons: {
+    icon: '/brand/logo_2.png',
+    shortcut: '/brand/logo_2.png',
+    apple: '/brand/logo_2.png',
+  },
+  openGraph: {
+    images: ['/brand/logo_2.png'],
+  },
+  twitter: {
+    card: 'summary',
+    images: ['/brand/logo_2.png'],
+  },
 }
 
 export default async function FrontendLayout({
