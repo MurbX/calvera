@@ -1,0 +1,185 @@
+/**
+ * Calvera Tech Solutions — admin theme overrides.
+ * Payload uses comma-separated RGB triplets for its theme variables
+ * (consumed via `rgb(var(--theme-success-500))`).
+ */
+
+@layer payload-default {
+  :root[data-theme='light'],
+  :root[data-theme='dark'] {
+    /* Brand primary — dark forest green #063f27 */
+    --theme-success-50: 232, 243, 233;
+    --theme-success-100: 216, 240, 224;
+    --theme-success-200: 176, 224, 194;
+    --theme-success-300: 126, 205, 161;
+    --theme-success-400: 74, 179, 126;
+    --theme-success-500: 6, 63, 39;
+    --theme-success-600: 5, 56, 35;
+    --theme-success-700: 5, 47, 30;
+    --theme-success-800: 4, 39, 19;
+    --theme-success-900: 3, 24, 12;
+
+    --color-success-500: 6, 63, 39;
+    --color-success-600: 5, 56, 35;
+
+    /* Accent — amber #fbbf24 */
+    --theme-warning-500: 251, 191, 36;
+    --theme-warning-600: 217, 119, 6;
+    --color-warning-500: 251, 191, 36;
+  }
+}
+
+/* Direct overrides for the few variables that aren't RGB triplets. */
+:root,
+:root[data-theme='light'] {
+  --theme-bg: rgb(250, 250, 248);
+  --theme-input-bg: #ffffff;
+}
+
+:root[data-theme='dark'] {
+  --theme-bg: rgb(7, 23, 14);
+}
+
+/* Login screen polish — center the custom Logo nicely */
+.template-default__main-content,
+.login__form,
+.login__brand {
+  --logo-max-width: 240px;
+}
+.login__brand img {
+  max-width: var(--logo-max-width);
+  height: auto;
+}
+
+/* Primary buttons + active links → brand green */
+.btn--style-primary,
+.btn--style-primary:not(:disabled):hover {
+  background-color: #063f27;
+  border-color: #063f27;
+  color: #ffffff;
+}
+.btn--style-primary:not(:disabled):hover {
+  background-color: #052e1d;
+  border-color: #052e1d;
+}
+
+a,
+.nav__link--active {
+  color: #063f27;
+}
+
+/* Highlight the focused/selected nav item */
+.nav__link.active {
+  background-color: rgba(6, 63, 39, 0.06);
+}
+
+/* Save button on document edit views */
+.doc-controls .btn--style-primary {
+  background-color: #063f27;
+  border-color: #063f27;
+}
+
+/* Hide Payload's default nav-collapse toggle — exact class names only,
+   no wildcards (those broke other UI like the upload field). */
+.nav-toggler,
+.nav__toggler,
+.template-default__nav-toggler,
+.collapsible-nav-toggler {
+  display: none !important;
+}
+
+/* ============================================================
+   Calvera custom Nav (admin sidebar)
+   ============================================================ */
+
+.cv-nav {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  background-color: #063f27;
+  color: #ffffff;
+  padding: 18px 12px 72px; /* extra bottom space so Next dev indicator doesn't cover the footer */
+  gap: 14px;
+  overflow-y: auto;
+  font-size: 14px;
+
+  /* Branding row */
+  &__brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 4px 8px 6px;
+    img {
+      flex-shrink: 0;
+      width: 36px;
+      height: 36px;
+      object-fit: contain;
+    }
+  }
+  &__brandText {
+    display: flex;
+    flex-direction: column;
+    line-height: 1.05;
+  }
+  &__brandName {
+    font-size: 15px;
+    font-weight: 800;
+    letter-spacing: -0.01em;
+    color: #ffffff;
+  }
+  &__brandTag {
+    font-size: 9px;
+    font-weight: 600;
+    letter-spacing: 0.22em;
+    color: rgba(255, 255, 255, 0.5);
+  }
+
+  &__groups {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    margin-top: 4px;
+  }
+  &__group {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  &__groupLabel {
+    padding: 4px 12px 2px;
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    color: rgba(255, 255, 255, 0.4);
+  }
+  &__items {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+  &__link {
+    display: block;
+    padding: 9px 12px;
+    /* Match Payload's default radius (~4px) used on inputs/buttons elsewhere in the admin */
+    border-radius: 4px;
+    color: rgba(255, 255, 255, 0.78);
+    text-decoration: none;
+    font-weight: 500;
+    transition: background-color 0.12s ease, color 0.12s ease;
+    &:hover {
+      background-color: rgba(255, 255, 255, 0.06);
+      color: #ffffff;
+    }
+    &--active {
+      background-color: #ffffff;
+      color: #063f27;
+      font-weight: 600;
+      box-shadow: none;
+    }
+  }
+}

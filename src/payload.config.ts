@@ -1,0 +1,85 @@
+import path from 'path'
+import { fileURLToPath } from 'url'
+import { buildConfig } from 'payload'
+import { postgresAdapter } from '@payloadcms/db-postgres'
+import { lexicalEditor } from '@payloadcms/richtext-lexical'
+import sharp from 'sharp'
+
+import { Users } from './collections/Users'
+import { Media } from './collections/Media'
+import { Categories } from './collections/Categories'
+import { Brands } from './collections/Brands'
+import { Products } from './collections/Products'
+import { Orders } from './collections/Orders'
+import { CalculatorSubmissions } from './collections/CalculatorSubmissions'
+import { Leads } from './collections/Leads'
+import { Customers } from './collections/Customers'
+
+const filename = fileURLToPath(import.meta.url)
+const dirname = path.dirname(filename)
+
+export default buildConfig({
+  admin: {
+    user: Users.slug,
+    importMap: {
+      baseDir: path.resolve(dirname),
+    },
+    components: {
+      Nav: '/components/admin/Nav.tsx#Nav',
+      graphics: {
+        Logo: '/components/admin/Logo.tsx#Logo',
+        Icon: '/components/admin/Icon.tsx#Icon',
+      },
+    },
+    meta: {
+      title: 'Calvera Admin',
+      titleSuffix: ' — Calvera Tech Solutions',
+      description:
+        'Calvera Tech Solutions — admin dashboard for products, orders, leads & calculator submissions.',
+      icons: [
+        { rel: 'icon', type: 'image/png', url: '/brand/calvera-logo.png' },
+        { rel: 'apple-touch-icon', type: 'image/png', url: '/brand/calvera-logo.png' },
+      ],
+    },
+  },
+  editor: lexicalEditor(),
+  collections: [
+    Users,
+    Customers,
+    Media,
+    Categories,
+    Brands,
+    Products,
+    Orders,
+    CalculatorSubmissions,
+    Leads,
+  ],
+  cors: [process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000'],
+  csrf: [process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000'],
+  db: postgresAdapter({
+    pool: {
+      connectionString: process.env.DATABASE_URL ?? '',
+      // Neon auto-suspends compute after 5 min idle; cloud NATs also cut
+      // long-idle TCP sockets. These settings keep the pool healthy:
+      // - keepAlive: send TCP probes so NAT/Neon don't silently drop sockets
+      // - idleTimeoutMillis: cycle idle conns before Neon's auto-suspend hits
+      // - connectionTimeoutMillis: fail fast instead of hanging on a bad socket
+      // - max: cap Neon-side connections (Neon free tier allows ~100)
+      max: 10,
+      idleTimeoutMillis: 30_000,
+      connectionTimeoutMillis: 10_000,
+      keepAlive: true,
+      keepAliveInitialDelayMillis: 10_000,
+      allowExitOnIdle: false,
+    },
+    // Neon's pooled (-pooler) endpoint runs in transaction-mode PgBouncer,
+    // which doesn't support session-level transactions Payload would otherwise
+    // use. Disable transactions to avoid "cannot begin transaction".
+    transactionOptions: false,
+  }),
+  secret: process.env.PAYLOAD_SECRET ?? 'dev-only-secret-change-me',
+  typescript: {
+    outputFile: path.resolve(dirname, 'payload-types.ts'),
+  },
+  sharp,
+})
