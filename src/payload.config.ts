@@ -73,6 +73,11 @@ export default buildConfig({
       keepAliveInitialDelayMillis: 10_000,
       allowExitOnIdle: false,
     },
+    // Force schema-push in production too. We're sharing one Neon DB between
+    // dev and prod, so dev has already pushed every column we need; this just
+    // tells the prod runtime to trust the existing schema instead of erroring
+    // on the "no migrations table" check. Switch to migrations before scale.
+    push: true,
     // Neon's pooled (-pooler) endpoint runs in transaction-mode PgBouncer,
     // which doesn't support session-level transactions Payload would otherwise
     // use. Disable transactions to avoid "cannot begin transaction".
