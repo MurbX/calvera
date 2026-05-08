@@ -3,6 +3,7 @@ import { fileURLToPath } from 'url'
 import { buildConfig } from 'payload'
 import { postgresAdapter } from '@payloadcms/db-postgres'
 import { lexicalEditor } from '@payloadcms/richtext-lexical'
+import { vercelBlobStorage } from '@payloadcms/storage-vercel-blob'
 import sharp from 'sharp'
 
 import { Users } from './collections/Users'
@@ -81,5 +82,16 @@ export default buildConfig({
   typescript: {
     outputFile: path.resolve(dirname, 'payload-types.ts'),
   },
+  // Vercel's serverless filesystem is read-only, so the default disk uploader
+  // for the Media collection won't work in production. We route uploads to
+  // Vercel Blob when BLOB_READ_WRITE_TOKEN is set; locally without the token
+  // the plugin is a no-op and uploads still write to ./media as before.
+  plugins: [
+    vercelBlobStorage({
+      enabled: Boolean(process.env.BLOB_READ_WRITE_TOKEN),
+      collections: { media: true },
+      token: process.env.BLOB_READ_WRITE_TOKEN ?? '',
+    }),
+  ],
   sharp,
 })

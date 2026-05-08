@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation'
 import type { Metadata } from 'next'
 import { ArrowRight, ChevronRight, ShieldCheck, Truck, Wrench } from 'lucide-react'
 import { ProductCard } from '@/components/ProductCard'
+import { Suspense } from 'react'
 import { ShopSidebar } from '@/components/ShopSidebar'
 import { Pagination } from '@/components/Pagination'
 import {
@@ -108,7 +109,9 @@ export default async function CategoryPage({ params }: Props) {
 
       <div className="mx-auto max-w-350 px-4 py-10 sm:px-6">
         <div className="grid gap-10 lg:grid-cols-[260px_1fr]">
-          <ShopSidebar />
+          <Suspense fallback={<div className="h-64 animate-pulse rounded-2xl bg-soft" />}>
+            <ShopSidebar />
+          </Suspense>
 
           <div>
             <div className="flex flex-wrap items-end justify-between gap-4">
