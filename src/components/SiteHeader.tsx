@@ -47,7 +47,7 @@ export async function SiteHeader() {
 
   return (
     <header className="sticky top-0 z-40 w-full">
-      <div className="bg-brand-800 text-white">
+      <div className="hidden bg-brand-800 text-white sm:block">
         <div className="mx-auto flex max-w-350 items-center justify-between gap-4 px-4 py-2 text-xs sm:text-sm sm:px-6">
           <a href={`tel:${phone}`} className="flex items-center gap-2 hover:opacity-90">
             <Phone className="h-4 w-4" />
