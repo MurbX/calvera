@@ -3,11 +3,8 @@
  * (59 SKUs as of May 2026). Used by /api/seed to populate Payload on first run
  * and to refresh prices/images when re-run.
  *
- * Image attachment strategy:
- *  - 80 raw photos live in /public/products/catalog/img-001..080.jpeg
- *  - A handful are pre-matched below using the IMG_* constants
- *  - Everything else points at PLACEHOLDER for now; the team picks the right
- *    photo via /admin/collections/products → Image upload (Payload's media UI)
+ * Images: 80 raw photos live in /public/products/catalog/img-001..080.jpeg.
+ * Every SKU is mapped via the IMG_* constants below to its closest match.
  */
 
 export type ProductCategory =
@@ -135,19 +132,30 @@ export const CATEGORY_NAV: CategoryNav[] = [
 const IMG = (file: string) => `/products/${file}`
 const CAT = (n: number) => `/products/catalog/img-${String(n).padStart(3, '0')}.jpeg`
 
-// Pre-matched images (high-confidence visual matches from the WhatsApp dump).
-// Anything not pre-matched falls back to PLACEHOLDER until the team uploads a
-// proper image via /admin.
-const PLACEHOLDER = '/placeholder-product.svg'
-
-const IMG_FLOOD_100W = CAT(4) // 100W flood, marked "100W" with 180 LEDs
-const IMG_FLOOD_200W = CAT(2) // 200W flood, marked "200W" with 222 LEDs
-const IMG_FLOOD_300W = CAT(5) // 300W flood, "LED SOLAR FLOOD LIGHT 300W" / SUPER SUN
-const IMG_PANEL_JINKO = CAT(1) // Jinko panel + crate (used for both 585W & 620W)
-const IMG_AMIZAR_PRO = CAT(6) // AMIZAR HYBRID SOLAR INVERTER marketing render
-const IMG_SRNE_BATTERY = CAT(11) // SRNE Lithium Battery Energy Storage (white wall-mount)
+// Pre-matched images — every product is mapped to a real catalogue photo.
+const IMG_FLOOD_100W = CAT(4) // 100W flood — STL-101D1/100W
+const IMG_FLOOD_200W = CAT(2) // 200W flood
+const IMG_FLOOD_300W = CAT(5) // 300W flood — SUPER SUN
+const IMG_FLOOD_500W = CAT(40) // 500W flood — STL-101D1/500W (exact box + product photo)
+const IMG_FLOOD_50W_ZD = CAT(74) // ZD ZERO DEGREE 50W "ZD-T50" exact
+const IMG_FLOOD_300L_ZD = CAT(66) // 300L ZD
+const IMG_PANEL_JINKO = CAT(1) // Jinko panel + crate (585W & 620W panels)
+const IMG_AMIZAR_PRO = CAT(6) // AMIZAR Hybrid Solar Inverter marketing render
+const IMG_SRNE_BATTERY = CAT(11) // SRNE Lithium Battery Energy Storage
 const IMG_SRNE_INVERTER = CAT(7) // SRNE single-phase HYP body
-const IMG_SRNE_3P = CAT(9) // SRNE 3-phase HESP body (round face)
+const IMG_SRNE_3P = CAT(9) // SRNE 3-phase HESP (12kW)
+const IMG_INFINISOLAR_INVERTER = CAT(41) // 2× InfiniSolar HP800 inverters
+const IMG_AMIZAR_BATT_2_5 = CAT(22) // AMIZAR 2.56kWh / 100Ah / 25.6V
+const IMG_AMIZAR_BATT_5 = CAT(24) // AMIZAR 5.12kWh / 100Ah / 51.2V
+const IMG_AMIZAR_BATT_12 = CAT(21) // AMIZAR 11.77kWh / 230Ah / 51.2V
+const IMG_INFINISOLAR_BATT_12V = CAT(80) // InfiniSolar INF-LFS 12100 — 12.8V 100Ah official render
+const IMG_LITHIUM_12V = CAT(42) // Lithium Valley 12V 100Ah Li-ion (generic, non-branded SKUs)
+const IMG_INFINISOLAR_BATT_24V = CAT(67) // InfiniSolar grey 24V wall-mount LiFePO4
+const IMG_INFINISOLAR_BATT_48V = CAT(73) // InfiniSolar 51.2V 100Ah grey wall-mount marketing render
+const IMG_AQUASUN_150 = CAT(27) // AQUASUN 150L heater installed
+const IMG_AQUASUN_200 = CAT(31) // AQUASUN 200L heater
+const IMG_AQUASUN_300 = CAT(29) // AQUASUN 300L heater
+const IMG_SOLAR_HOME_KIT = CAT(39) // ALLTOP 20W Solar Power System / home kit
 
 // Specs helpers
 function panel(watts: number) {
@@ -265,7 +273,7 @@ export const PRODUCTS: SeedProduct[] = [
     reviews: 0,
     shortDescription: '2kVA InfiniSolar hybrid — 400V / 80A solar input.',
     specs: inverter('2kVA', 'Hybrid', '400V / 80A'),
-    image: PLACEHOLDER,
+    image: IMG_INFINISOLAR_INVERTER,
     inStock: true,
   },
   {
@@ -325,7 +333,7 @@ export const PRODUCTS: SeedProduct[] = [
     reviews: 0,
     shortDescription: 'InfiniSolar 3.2kW hybrid — 160V / 60A solar input.',
     specs: inverter('3.2kW', 'Hybrid', '160V / 60A'),
-    image: PLACEHOLDER,
+    image: IMG_INFINISOLAR_INVERTER,
     inStock: true,
   },
   {
@@ -370,7 +378,7 @@ export const PRODUCTS: SeedProduct[] = [
     reviews: 0,
     shortDescription: 'InfiniSolar 3.6kW hybrid — 400V / 100A solar input.',
     specs: inverter('3.6kW', 'Hybrid', '400V / 100A'),
-    image: PLACEHOLDER,
+    image: IMG_INFINISOLAR_INVERTER,
     inStock: true,
   },
   {
@@ -385,7 +393,7 @@ export const PRODUCTS: SeedProduct[] = [
     reviews: 0,
     shortDescription: 'InfiniSolar 4kW hybrid — 450V / 100A solar input.',
     specs: inverter('4kW', 'Hybrid', '450V / 100A'),
-    image: PLACEHOLDER,
+    image: IMG_INFINISOLAR_INVERTER,
     inStock: true,
   },
   {
@@ -445,7 +453,7 @@ export const PRODUCTS: SeedProduct[] = [
     reviews: 0,
     shortDescription: 'InfiniSolar 6kW — 450V / 100A solar input.',
     specs: inverter('6kW', 'Hybrid', '450V / 100A'),
-    image: PLACEHOLDER,
+    image: IMG_INFINISOLAR_INVERTER,
     inStock: true,
   },
   {
@@ -490,7 +498,7 @@ export const PRODUCTS: SeedProduct[] = [
     reviews: 0,
     shortDescription: 'InfiniSolar 10kW hybrid — 500V / 150A solar input.',
     specs: inverter('10kW', 'Hybrid', '500V / 150A'),
-    image: PLACEHOLDER,
+    image: IMG_INFINISOLAR_INVERTER,
     inStock: true,
   },
   {
@@ -582,7 +590,7 @@ export const PRODUCTS: SeedProduct[] = [
     reviews: 0,
     shortDescription: '12V 100Ah lithium-ion battery — for small backup systems.',
     specs: battery('100Ah (1.2kWh)', '12V', 'Lithium-ion'),
-    image: PLACEHOLDER,
+    image: IMG_LITHIUM_12V,
     inStock: true,
   },
   {
@@ -597,7 +605,7 @@ export const PRODUCTS: SeedProduct[] = [
     reviews: 0,
     shortDescription: 'InfiniSolar LiFePO4 — 12V 100Ah (1.2kWh).',
     specs: battery('100Ah (1.2kWh)', '12V'),
-    image: PLACEHOLDER,
+    image: IMG_INFINISOLAR_BATT_12V,
     inStock: true,
   },
   {
@@ -611,7 +619,7 @@ export const PRODUCTS: SeedProduct[] = [
     reviews: 0,
     shortDescription: '12V 200Ah lithium-ion battery — 2.4kWh capacity.',
     specs: battery('200Ah (2.4kWh)', '12V', 'Lithium-ion'),
-    image: PLACEHOLDER,
+    image: IMG_LITHIUM_12V,
     inStock: true,
   },
   {
@@ -626,7 +634,7 @@ export const PRODUCTS: SeedProduct[] = [
     reviews: 0,
     shortDescription: 'InfiniSolar LiFePO4 — 12V 200Ah (2.4kWh).',
     specs: battery('200Ah (2.4kWh)', '12V'),
-    image: PLACEHOLDER,
+    image: IMG_INFINISOLAR_BATT_12V,
     inStock: true,
   },
   {
@@ -656,7 +664,7 @@ export const PRODUCTS: SeedProduct[] = [
     reviews: 0,
     shortDescription: 'AMIZAR 25.6V 100Ah — 2.56kWh.',
     specs: battery('100Ah (2.56kWh)', '25.6V'),
-    image: PLACEHOLDER,
+    image: IMG_AMIZAR_BATT_2_5,
     inStock: true,
   },
   {
@@ -671,7 +679,7 @@ export const PRODUCTS: SeedProduct[] = [
     reviews: 0,
     shortDescription: 'InfiniSolar 25.6V 100Ah — 2.56kWh.',
     specs: battery('100Ah (2.56kWh)', '25.6V'),
-    image: PLACEHOLDER,
+    image: IMG_INFINISOLAR_BATT_24V,
     inStock: true,
   },
   {
@@ -686,7 +694,7 @@ export const PRODUCTS: SeedProduct[] = [
     reviews: 0,
     shortDescription: 'InfiniSolar 25.6V 200Ah — 5.12kWh.',
     specs: battery('200Ah (5.12kWh)', '25.6V'),
-    image: PLACEHOLDER,
+    image: IMG_INFINISOLAR_BATT_24V,
     inStock: true,
   },
   {
@@ -701,7 +709,7 @@ export const PRODUCTS: SeedProduct[] = [
     reviews: 0,
     shortDescription: 'InfiniSolar 51.2V 100Ah — 5.12kWh.',
     specs: battery('100Ah (5.12kWh)', '51.2V'),
-    image: PLACEHOLDER,
+    image: IMG_INFINISOLAR_BATT_48V,
     inStock: true,
   },
   {
@@ -731,7 +739,7 @@ export const PRODUCTS: SeedProduct[] = [
     reviews: 0,
     shortDescription: 'AMIZAR 51.2V 100Ah — 5.12kWh.',
     specs: battery('100Ah (5.12kWh)', '51.2V'),
-    image: PLACEHOLDER,
+    image: IMG_AMIZAR_BATT_5,
     inStock: true,
   },
   {
@@ -776,7 +784,7 @@ export const PRODUCTS: SeedProduct[] = [
     reviews: 0,
     shortDescription: 'AMIZAR 11.77kWh lithium-ion — large home / small commercial storage.',
     specs: battery('11.77kWh', '51.2V'),
-    image: PLACEHOLDER,
+    image: IMG_AMIZAR_BATT_12,
     inStock: true,
     featured: true,
   },
@@ -791,7 +799,7 @@ export const PRODUCTS: SeedProduct[] = [
     reviews: 0,
     shortDescription: '51.2V 200Ah LiFePO4 — 10.24kWh storage.',
     specs: battery('200Ah (10.24kWh)', '51.2V'),
-    image: PLACEHOLDER,
+    image: IMG_AMIZAR_BATT_12,
     inStock: true,
   },
   {
@@ -836,7 +844,7 @@ export const PRODUCTS: SeedProduct[] = [
     reviews: 0,
     shortDescription: 'InfiniSolar 51.2V 300Ah LiFePO4 — 15kWh.',
     specs: battery('300Ah (15kWh)', '51.2V'),
-    image: PLACEHOLDER,
+    image: IMG_INFINISOLAR_BATT_48V,
     inStock: true,
   },
   {
@@ -868,7 +876,7 @@ export const PRODUCTS: SeedProduct[] = [
     reviews: 0,
     shortDescription: '100W ZD-series solar flood light — budget tier.',
     specs: flood(100),
-    image: PLACEHOLDER,
+    image: IMG_FLOOD_100W,
     inStock: true,
   },
   {
@@ -883,7 +891,7 @@ export const PRODUCTS: SeedProduct[] = [
     reviews: 0,
     shortDescription: '200W ZD-series solar flood light — budget tier.',
     specs: flood(200),
-    image: PLACEHOLDER,
+    image: IMG_FLOOD_200W,
     inStock: true,
   },
   {
@@ -898,7 +906,7 @@ export const PRODUCTS: SeedProduct[] = [
     reviews: 0,
     shortDescription: '50W ZD-series solar flood light — budget tier.',
     specs: flood(50),
-    image: PLACEHOLDER,
+    image: IMG_FLOOD_50W_ZD,
     inStock: true,
   },
   {
@@ -913,7 +921,7 @@ export const PRODUCTS: SeedProduct[] = [
     reviews: 0,
     shortDescription: '300L ZD-series solar flood light.',
     specs: flood(300),
-    image: PLACEHOLDER,
+    image: IMG_FLOOD_300L_ZD,
     inStock: true,
   },
   {
@@ -986,7 +994,7 @@ export const PRODUCTS: SeedProduct[] = [
     reviews: 0,
     shortDescription: '500W solar flood light — 384× SMD2835, 32000mAh, 6–9m install, 2-year warranty.',
     specs: flood(500, 384, 32000),
-    image: PLACEHOLDER,
+    image: IMG_FLOOD_500W,
     inStock: true,
   },
   {
@@ -1017,7 +1025,7 @@ export const PRODUCTS: SeedProduct[] = [
     reviews: 0,
     shortDescription: 'AQUASUN non-pressurized 150L — includes assistant tank, controller, element, magnesium rod.',
     specs: heater(150, false),
-    image: PLACEHOLDER,
+    image: IMG_AQUASUN_150,
     inStock: true,
   },
   {
@@ -1032,7 +1040,7 @@ export const PRODUCTS: SeedProduct[] = [
     reviews: 0,
     shortDescription: 'AQUASUN 200L solar water heater — includes assistant tank, controller, element, magnesium rod.',
     specs: heater(200, false),
-    image: PLACEHOLDER,
+    image: IMG_AQUASUN_200,
     inStock: true,
   },
   {
@@ -1047,7 +1055,7 @@ export const PRODUCTS: SeedProduct[] = [
     reviews: 0,
     shortDescription: 'AQUASUN 300L solar water heater — includes assistant tank, controller, element, magnesium rod.',
     specs: heater(300, false),
-    image: PLACEHOLDER,
+    image: IMG_AQUASUN_300,
     inStock: true,
   },
 
@@ -1087,7 +1095,7 @@ export const PRODUCTS: SeedProduct[] = [
       { label: 'Audio', value: 'FM radio + SD/USB player' },
       { label: 'Charging', value: 'USB port' },
     ],
-    image: PLACEHOLDER,
+    image: IMG_SOLAR_HOME_KIT,
     inStock: true,
   },
 ]
