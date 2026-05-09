@@ -18,11 +18,8 @@ export const metadata: Metadata = {
   title: 'Calvera Tech Solutions — Power Your Kenya Home',
   description:
     'Solar panels, inverters, batteries and full kits delivered & installed across Kenya. Build your system with our solar calculator.',
-  icons: {
-    icon: '/brand/logo_2.png',
-    shortcut: '/brand/logo_2.png',
-    apple: '/brand/logo_2.png',
-  },
+  // Favicons come from src/app/icon.png + src/app/favicon.ico (Next.js
+  // convention) — don't override here with the 1.8MB social-preview file.
   openGraph: {
     images: ['/brand/logo_2.png'],
   },

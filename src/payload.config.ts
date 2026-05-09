@@ -19,6 +19,18 @@ import { Customers } from './collections/Customers'
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
 
+function buildAllowedOrigins(): string[] {
+  const out = new Set<string>(['http://localhost:3000'])
+  if (process.env.NEXT_PUBLIC_SITE_URL) out.add(process.env.NEXT_PUBLIC_SITE_URL)
+  // Stable production URL Vercel exposes for the project's main alias.
+  if (process.env.VERCEL_PROJECT_PRODUCTION_URL) {
+    out.add(`https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`)
+  }
+  // Per-deployment URL (e.g. preview deploys + the live deploy alias).
+  if (process.env.VERCEL_URL) out.add(`https://${process.env.VERCEL_URL}`)
+  return [...out]
+}
+
 export default buildConfig({
   admin: {
     user: Users.slug,
@@ -55,8 +67,11 @@ export default buildConfig({
     CalculatorSubmissions,
     Leads,
   ],
-  cors: [process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000'],
-  csrf: [process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000'],
+  // Allow CORS + CSRF from every URL Vercel assigns this app, plus localhost.
+  // Without this, the production deploy URL (https://*.vercel.app) is blocked
+  // and every admin mutation / customer logout returns 403.
+  cors: buildAllowedOrigins(),
+  csrf: buildAllowedOrigins(),
   db: postgresAdapter({
     pool: {
       connectionString: process.env.DATABASE_URL ?? '',
