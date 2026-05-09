@@ -20,8 +20,10 @@ export async function POST() {
     errors: [] as string[],
   }
 
-  // Remove products in the DB whose slug isn't in our current seed list.
-  // Keeps the catalog in lock-step with src/data/products.ts.
+  // Soft-delete products whose slug isn't in our current seed list:
+  // mark them isPublished=false so they vanish from the storefront, but keep
+  // the rows so existing orders that reference them stay intact (Postgres
+  // would block a hard delete on a FK-referenced product anyway).
   try {
     const validSlugs = new Set(PRODUCTS.map((p) => p.slug))
     const all = await payload.find({
@@ -30,16 +32,22 @@ export async function POST() {
       depth: 0,
       pagination: false,
       overrideAccess: true,
+      where: { isPublished: { equals: true } },
     })
     for (const doc of all.docs) {
       const docSlug = (doc as unknown as { slug: string }).slug
       if (!validSlugs.has(docSlug)) {
-        await payload.delete({
-          collection: 'products',
-          id: doc.id,
-          overrideAccess: true,
-        })
-        stats.productsDeleted++
+        try {
+          await payload.update({
+            collection: 'products',
+            id: doc.id,
+            data: { isPublished: false },
+            overrideAccess: true,
+          })
+          stats.productsDeleted++
+        } catch (innerErr) {
+          stats.errors.push(`Soft-delete ${docSlug}: ${(innerErr as Error).message}`)
+        }
       }
     }
   } catch (err) {

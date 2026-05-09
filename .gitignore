@@ -39,3 +39,6 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Local source folder for raw WhatsApp catalog images (already mirrored under public/products/catalog/)
+/calvera image/
