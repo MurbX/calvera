@@ -46,7 +46,11 @@ export function HeaderUserMenu({ customer }: Props) {
   const onLogout = async () => {
     setOpen(false)
     try {
-      await fetch('/api/customers/logout', { method: 'POST', credentials: 'include' })
+      await fetch('/api/customers/logout', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+      })
     } catch {}
     router.replace('/')
     router.refresh()
