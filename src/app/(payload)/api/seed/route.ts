@@ -4,9 +4,23 @@ import { getPayload } from 'payload'
 import config from '@payload-config'
 import { CATEGORY_NAV, PRODUCTS } from '@/data/products'
 
-export async function POST() {
+export async function POST(request: Request) {
+  // In production, require Authorization: Bearer <SEED_TOKEN> so random
+  // visitors can't reseed the catalogue. In dev anyone on localhost can hit
+  // it without a token.
   if (process.env.NODE_ENV === 'production') {
-    return NextResponse.json({ error: 'Seeding disabled in production' }, { status: 403 })
+    const expected = process.env.SEED_TOKEN
+    if (!expected) {
+      return NextResponse.json(
+        { error: 'SEED_TOKEN not configured on this deployment' },
+        { status: 503 },
+      )
+    }
+    const auth = request.headers.get('authorization') ?? ''
+    const provided = auth.startsWith('Bearer ') ? auth.slice('Bearer '.length) : ''
+    if (provided !== expected) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
   }
 
   const payload = await getPayload({ config })
