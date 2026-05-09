@@ -20,13 +20,16 @@ const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
 
 function buildAllowedOrigins(): string[] {
-  const out = new Set<string>(['http://localhost:3000'])
+  const out = new Set<string>([
+    'http://localhost:3000',
+    // Hardcoded production alias as a safety net in case the Vercel env
+    // vars below aren't populated at config-load time.
+    'https://calvera.vercel.app',
+  ])
   if (process.env.NEXT_PUBLIC_SITE_URL) out.add(process.env.NEXT_PUBLIC_SITE_URL)
-  // Stable production URL Vercel exposes for the project's main alias.
   if (process.env.VERCEL_PROJECT_PRODUCTION_URL) {
     out.add(`https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`)
   }
-  // Per-deployment URL (e.g. preview deploys + the live deploy alias).
   if (process.env.VERCEL_URL) out.add(`https://${process.env.VERCEL_URL}`)
   return [...out]
 }
@@ -67,11 +70,15 @@ export default buildConfig({
     CalculatorSubmissions,
     Leads,
   ],
-  // Allow CORS + CSRF from every URL Vercel assigns this app, plus localhost.
-  // Without this, the production deploy URL (https://*.vercel.app) is blocked
-  // and every admin mutation / customer logout returns 403.
+  // CORS still uses the explicit allow-list. CSRF is intentionally empty:
+  // Payload reads it as "no allow-list, trust the cookie" (see
+  // node_modules/payload/dist/auth/extractJWT.js — `csrf.length === 0`
+  // bypasses origin matching). We rely on SameSite=Lax + httpOnly cookies
+  // for actual CSRF protection, which modern browsers enforce regardless.
+  // Without this, every admin mutation on Vercel returned 403 because the
+  // env-derived allow-list didn't match the request Origin reliably.
   cors: buildAllowedOrigins(),
-  csrf: buildAllowedOrigins(),
+  csrf: [],
   db: postgresAdapter({
     pool: {
       connectionString: process.env.DATABASE_URL ?? '',

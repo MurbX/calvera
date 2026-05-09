@@ -31,6 +31,7 @@ const GROUPS: Group[] = [
         slug: 'calculator-submissions',
       },
       { href: '/admin/collections/orders', label: 'Orders', slug: 'orders' },
+      { href: '/admin/collections/customers', label: 'Customers', slug: 'customers' },
     ],
   },
   {
