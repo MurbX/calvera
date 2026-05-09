@@ -6,13 +6,14 @@ import { useEffect, useRef, useState } from 'react'
 import {
   ArrowLeft,
   Battery,
-  Cable,
   Cpu,
   Download,
+  Frame,
   Loader2,
   MessageCircle,
   Send,
   SolarPanel,
+  Wrench,
 } from 'lucide-react'
 import { formatKes } from '@/lib/utils'
 import type { PowerAuditAppliance, PowerAuditLead } from '@/lib/power-audit-types'
@@ -35,7 +36,9 @@ type Bom = {
   panel: BomItem | null
   inverter: BomItem | null
   battery: BomItem | null
-  mounting: BomItem | null
+  mountingKes: number
+  installationKes: number
+  materialsSubtotalKes: number
   estimatedTotalKes: number
 }
 
@@ -168,13 +171,8 @@ export function StepQuotation({ lead, appliances, onBack }: Props) {
                             unitPriceKes: bom.battery.unitPriceKes,
                           }
                         : null,
-                      mounting: bom.mounting
-                        ? {
-                            name: bom.mounting.name,
-                            quantity: bom.mounting.quantity,
-                            unitPriceKes: bom.mounting.unitPriceKes,
-                          }
-                        : null,
+                      mountingStructureKes: bom.mountingKes,
+                      installationKes: bom.installationKes,
                     }
                   : null,
               }
@@ -328,11 +326,26 @@ export function StepQuotation({ lead, appliances, onBack }: Props) {
               note={`No battery in stock matches ${(rec.batteryWh / 1000).toFixed(1)} kWh.`}
             />
           )}
-          {bom.mounting && (
-            <BomCard
-              icon={<Cable className="h-5 w-5" />}
-              kind="Mounting / accessories"
-              item={bom.mounting}
+          {bom.mountingKes > 0 && (
+            <SimpleCostCard
+              icon={<Frame className="h-5 w-5" />}
+              kind="Mounting"
+              title="Solar mounting structure"
+              description={
+                bom.panel
+                  ? `Roof rails / brackets sized for ${bom.panel.quantity} panel${bom.panel.quantity === 1 ? '' : 's'} (KES 15,000 per 4 panels, prorated)`
+                  : 'KES 15,000 per 4 panels, prorated'
+              }
+              totalKes={bom.mountingKes}
+            />
+          )}
+          {bom.installationKes > 0 && (
+            <SimpleCostCard
+              icon={<Wrench className="h-5 w-5" />}
+              kind="Installation"
+              title="Professional installation"
+              description="20% of materials · vetted installer · site survey · commissioning"
+              totalKes={bom.installationKes}
             />
           )}
         </ul>
@@ -473,6 +486,38 @@ function BomCard({
             {item.quantity} × {formatKes(item.unitPriceKes)}
           </p>
           <p className="mt-0.5 text-sm font-extrabold text-fg">{formatKes(total)}</p>
+        </div>
+      </div>
+    </li>
+  )
+}
+
+function SimpleCostCard({
+  icon,
+  kind,
+  title,
+  description,
+  totalKes,
+}: {
+  icon: React.ReactNode
+  kind: string
+  title: string
+  description?: string
+  totalKes: number
+}) {
+  return (
+    <li className="rounded-2xl border border-border bg-white p-4">
+      <div className="flex items-start gap-3">
+        <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-soft text-fg/85 sm:h-16 sm:w-16">
+          {icon}
+        </span>
+        <div className="min-w-0 flex-1">
+          <p className="text-[10px] font-semibold uppercase tracking-wider text-muted">{kind}</p>
+          <p className="text-sm font-bold text-fg">{title}</p>
+          {description && <p className="mt-1 text-xs text-muted">{description}</p>}
+        </div>
+        <div className="text-right">
+          <p className="text-sm font-extrabold text-fg">{formatKes(totalKes)}</p>
         </div>
       </div>
     </li>

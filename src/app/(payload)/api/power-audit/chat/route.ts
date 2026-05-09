@@ -32,7 +32,8 @@ type Body = {
       panel: BomLine
       inverter: BomLine
       battery: BomLine
-      mounting: BomLine
+      mountingStructureKes?: number
+      installationKes?: number
     } | null
   }
 }
@@ -137,7 +138,16 @@ function buildSystemInstruction(context?: Body['context']): string {
     lines.push(fmtLine('Solar panel', context.bom.panel))
     lines.push(fmtLine('Inverter', context.bom.inverter))
     lines.push(fmtLine('Battery', context.bom.battery))
-    if (context.bom.mounting) lines.push(fmtLine('Mounting / cabling', context.bom.mounting))
+    if (context.bom.mountingStructureKes && context.bom.mountingStructureKes > 0) {
+      lines.push(
+        `  · Solar mounting structure: ${formatKes(context.bom.mountingStructureKes)} (KES 15,000 per 4 panels, prorated)`,
+      )
+    }
+    if (context.bom.installationKes && context.bom.installationKes > 0) {
+      lines.push(
+        `  · Professional installation: ${formatKes(context.bom.installationKes)} (20% of materials)`,
+      )
+    }
   }
   if (lines.length === 0) return SYSTEM_PROMPT
   return `${SYSTEM_PROMPT}\n\n## This customer's audit\n${lines.join('\n')}`

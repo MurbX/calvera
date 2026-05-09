@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { computeRecommendation, type ApplianceInput } from '@/lib/calculator'
 import { buildBom } from '@/lib/sizing-products'
+import { priceBreakdown } from '@/lib/quotation-pricing'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -31,7 +32,7 @@ export async function POST(request: Request) {
   const recommendation = computeRecommendation(cleaned)
   const bom = await buildBom(recommendation)
 
-  // Slim down the BoM to just what the UI needs (avoid sending whole product docs).
+  // Slim the BoM to the shape the UI consumes (avoid sending whole product docs).
   const trim = (
     p: { product: { id: number | string; name: string; slug: string; price: number; imageUrl?: string | null; shortDescription?: string | null }; quantity: number },
     extras?: Record<string, unknown>,
@@ -46,14 +47,32 @@ export async function POST(request: Request) {
     ...extras,
   })
 
+  const trimmedPanel = bom.panel ? trim(bom.panel, { totalWatts: bom.panel.totalWatts }) : null
+  const trimmedInverter = bom.inverter ? trim(bom.inverter) : null
+  const trimmedBattery = bom.battery ? trim(bom.battery, { totalWh: bom.battery.totalWh }) : null
+
+  const pricing = priceBreakdown({
+    panel: trimmedPanel
+      ? { name: trimmedPanel.name, quantity: trimmedPanel.quantity, unitPriceKes: trimmedPanel.unitPriceKes, totalWatts: bom.panel?.totalWatts }
+      : null,
+    inverter: trimmedInverter
+      ? { name: trimmedInverter.name, quantity: trimmedInverter.quantity, unitPriceKes: trimmedInverter.unitPriceKes }
+      : null,
+    battery: trimmedBattery
+      ? { name: trimmedBattery.name, quantity: trimmedBattery.quantity, unitPriceKes: trimmedBattery.unitPriceKes, totalWh: bom.battery?.totalWh }
+      : null,
+  })
+
   return NextResponse.json({
     recommendation,
     bom: {
-      panel: bom.panel ? trim(bom.panel, { totalWatts: bom.panel.totalWatts }) : null,
-      inverter: bom.inverter ? trim(bom.inverter) : null,
-      battery: bom.battery ? trim(bom.battery, { totalWh: bom.battery.totalWh }) : null,
-      mounting: bom.mounting ? trim(bom.mounting) : null,
-      estimatedTotalKes: bom.estimatedTotalKes,
+      panel: trimmedPanel,
+      inverter: trimmedInverter,
+      battery: trimmedBattery,
+      mountingKes: pricing.mountingKes,
+      installationKes: pricing.installationKes,
+      materialsSubtotalKes: pricing.materialsSubtotalKes,
+      estimatedTotalKes: pricing.subtotalKes,
     },
   })
 }

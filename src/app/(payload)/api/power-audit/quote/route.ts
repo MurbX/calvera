@@ -4,6 +4,7 @@ import path from 'node:path'
 import { renderToBuffer } from '@react-pdf/renderer'
 import { computeRecommendation, type ApplianceInput } from '@/lib/calculator'
 import { buildBom } from '@/lib/sizing-products'
+import { priceBreakdown } from '@/lib/quotation-pricing'
 import { QuotationPDFv2, type QuotationLineItem } from '@/components/QuotationPDFv2'
 
 let cachedLogo: string | null = null
@@ -73,49 +74,41 @@ export async function POST(request: Request) {
     day: 'numeric',
   })
 
-  const items: QuotationLineItem[] = []
-  if (bom.panel) {
-    const total = bom.panel.product.price * bom.panel.quantity
-    items.push({
-      qty: bom.panel.quantity,
-      product: bom.panel.product.name,
-      description: `Total: ${bom.panel.totalWatts}W (${bom.panel.quantity}× module)`,
-      unitPriceKes: bom.panel.product.price,
-      totalKes: total,
-    })
-  }
-  if (bom.inverter) {
-    const total = bom.inverter.product.price * bom.inverter.quantity
-    items.push({
-      qty: bom.inverter.quantity,
-      product: bom.inverter.product.name,
-      description: bom.inverter.product.shortDescription ?? undefined,
-      unitPriceKes: bom.inverter.product.price,
-      totalKes: total,
-    })
-  }
-  if (bom.battery) {
-    const total = bom.battery.product.price * bom.battery.quantity
-    items.push({
-      qty: bom.battery.quantity,
-      product: bom.battery.product.name,
-      description: `Total storage: ${(bom.battery.totalWh / 1000).toFixed(2)} kWh`,
-      unitPriceKes: bom.battery.product.price,
-      totalKes: total,
-    })
-  }
-  if (bom.mounting) {
-    const total = bom.mounting.product.price * bom.mounting.quantity
-    items.push({
-      qty: bom.mounting.quantity,
-      product: bom.mounting.product.name,
-      description: 'Mounting / balance of system',
-      unitPriceKes: bom.mounting.product.price,
-      totalKes: total,
-    })
-  }
+  const pricing = priceBreakdown({
+    panel: bom.panel
+      ? {
+          name: bom.panel.product.name,
+          quantity: bom.panel.quantity,
+          unitPriceKes: bom.panel.product.price,
+          totalWatts: bom.panel.totalWatts,
+        }
+      : null,
+    inverter: bom.inverter
+      ? {
+          name: bom.inverter.product.name,
+          quantity: bom.inverter.quantity,
+          unitPriceKes: bom.inverter.product.price,
+        }
+      : null,
+    battery: bom.battery
+      ? {
+          name: bom.battery.product.name,
+          quantity: bom.battery.quantity,
+          unitPriceKes: bom.battery.product.price,
+          totalWh: bom.battery.totalWh,
+        }
+      : null,
+  })
 
-  const subtotal = items.reduce((s, i) => s + i.totalKes, 0)
+  const items: QuotationLineItem[] = pricing.lines.map((line) => ({
+    qty: line.quantity,
+    product: line.name,
+    description: line.description,
+    unitPriceKes: line.unitPriceKes,
+    totalKes: line.totalKes,
+  }))
+
+  const subtotal = pricing.subtotalKes
 
   const logoSrc = await loadLogoDataUri()
 
