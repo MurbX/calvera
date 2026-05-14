@@ -253,10 +253,7 @@ export default async function CustomerOrderDetailPage({ params }: Props) {
           </ul>
           <dl className="space-y-1 border-t border-border bg-soft/50 px-4 py-4 text-sm">
             <Row label="Subtotal" value={formatKes(order.subtotal)} />
-            <Row
-              label="Delivery"
-              value={order.shipping === 0 ? 'Free' : formatKes(order.shipping)}
-            />
+            <Row label="Delivery" value="Confirmed on WhatsApp" />
             {order.tax > 0 && <Row label="Tax" value={formatKes(order.tax)} />}
             <div className="flex items-baseline justify-between border-t border-border pt-2">
               <dt className="text-sm font-bold text-fg">Total</dt>

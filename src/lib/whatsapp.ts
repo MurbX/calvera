@@ -42,7 +42,6 @@ export type WhatsAppOrder = {
   deliveryMethod: string
   shippingAddress?: WhatsAppOrderAddress | null
   subtotal: number
-  shipping: number
   total: number
 }
 
@@ -76,8 +75,8 @@ export function buildWhatsAppOrderMessage(o: WhatsAppOrder): string {
 
   lines.push('💰 *Summary*')
   lines.push(`Subtotal: ${formatKes(o.subtotal)}`)
-  lines.push(`Delivery: ${o.shipping === 0 ? 'Free / pickup' : formatKes(o.shipping)}`)
-  lines.push(`*Total: ${formatKes(o.total)}*`)
+  lines.push(`Delivery: To be confirmed`)
+  lines.push(`*Total (excl. delivery): ${formatKes(o.total)}*`)
   lines.push('')
 
   lines.push('🚚 *Delivery*')

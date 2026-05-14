@@ -51,12 +51,11 @@ export default async function OrderSuccessPage({ searchParams }: Props) {
     depth: 0,
     overrideAccess: true,
   })
-  const orderDoc = result.docs[0] as
+  const orderDoc = result.docs[0] as unknown as
     | {
         orderNumber: string
         deliveryMethod: string
         subtotal: number
-        shipping: number
         total: number
         items?: OrderItem[]
         customer?: { name?: string; phone?: string; email?: string | null }
@@ -94,7 +93,6 @@ export default async function OrderSuccessPage({ searchParams }: Props) {
               ? null
               : orderDoc.shippingAddress ?? null,
           subtotal: orderDoc.subtotal,
-          shipping: orderDoc.shipping,
           total: orderDoc.total,
           siteUrl: process.env.NEXT_PUBLIC_SITE_URL,
         }),
@@ -158,12 +156,10 @@ export default async function OrderSuccessPage({ searchParams }: Props) {
               </div>
               <div className="flex items-baseline justify-between">
                 <dt className="text-fg/70">Delivery</dt>
-                <dd className="font-semibold text-fg">
-                  {orderDoc.shipping === 0 ? 'Free' : formatKes(orderDoc.shipping)}
-                </dd>
+                <dd className="font-semibold text-fg">Confirmed on WhatsApp</dd>
               </div>
               <div className="flex items-baseline justify-between border-t border-border pt-2">
-                <dt className="font-semibold text-fg">Total</dt>
+                <dt className="font-semibold text-fg">Total (excl. delivery)</dt>
                 <dd className="text-lg font-extrabold text-brand-800">
                   {formatKes(orderDoc.total)}
                 </dd>
