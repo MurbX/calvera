@@ -8,78 +8,93 @@ import {
   Battery,
   Cpu,
   Download,
+  Droplets,
   Frame,
+  Lightbulb,
   Loader2,
   MessageCircle,
+  Package,
   Send,
   SolarPanel,
   Wrench,
 } from 'lucide-react'
 import { formatKes } from '@/lib/utils'
-import type { PowerAuditAppliance, PowerAuditLead } from '@/lib/power-audit-types'
+import { AUDIT_TYPE_META, type AuditType, type PowerAuditLead } from '@/lib/power-audit-types'
 
 const FALLBACK_IMAGE = '/placeholder-product.svg'
 
-type BomItem = {
+// Client-side mirrors of the normalized shape from power-audit-recommend.ts
+// (kept local so this client component never imports the server-only lib).
+type NormalizedItem = {
+  kind: string
   productId: number | string
   name: string
   slug: string
-  unitPriceKes: number
   imageUrl: string | null
   shortDescription: string | null
+  unitPriceKes: number
   quantity: number
-  totalWatts?: number
-  totalWh?: number
+  extra?: string
 }
-
-type Bom = {
-  panel: BomItem | null
-  inverter: BomItem | null
-  battery: BomItem | null
-  mountingKes: number
-  installationKes: number
-  materialsSubtotalKes: number
+type NormalizedCostLine = {
+  kind: string
+  title: string
+  description?: string
+  totalKes: number
+}
+type NormalizedMissing = { kind: string; note: string }
+type NormalizedRecommendation = {
+  auditType: AuditType
+  quoteKind: string
+  summary: { label: string; value: string }[]
+  items: NormalizedItem[]
+  costLines: NormalizedCostLine[]
+  missing: NormalizedMissing[]
   estimatedTotalKes: number
-}
-
-type Recommendation = {
-  totalConnectedWatts: number
-  dailyEnergyWh: number
-  panelWattsTotal: number
-  inverterWatts: number
-  batteryWh: number
-  estimatedPriceKes: number
   notes: string[]
+  chatContext: Record<string, unknown>
 }
 
-type ChatMessage = {
-  role: 'user' | 'assistant'
-  content: string
-}
+type ChatMessage = { role: 'user' | 'assistant'; content: string }
 
 type Props = {
+  auditType: AuditType
   lead: PowerAuditLead
-  appliances: PowerAuditAppliance[]
+  /** Already shaped as `{ type, appliances }` or `{ type, needs }`. */
+  requestPayload: { type: AuditType } & Record<string, unknown>
   onBack: () => void
 }
 
-export function StepQuotation({ lead, appliances, onBack }: Props) {
+/** Pick an icon for a BoM line / cost line by its `kind` label. */
+function kindIcon(kind: string): React.ReactNode {
+  const k = kind.toLowerCase()
+  if (k.includes('panel')) return <SolarPanel className="h-5 w-5" />
+  if (k.includes('inverter')) return <Cpu className="h-5 w-5" />
+  if (k.includes('battery')) return <Battery className="h-5 w-5" />
+  if (k.includes('water')) return <Droplets className="h-5 w-5" />
+  if (k.includes('flood') || k.includes('light')) return <Lightbulb className="h-5 w-5" />
+  if (k.includes('mount') || k.includes('pole')) return <Frame className="h-5 w-5" />
+  if (k.includes('install')) return <Wrench className="h-5 w-5" />
+  return <Package className="h-5 w-5" />
+}
+
+export function StepQuotation({ auditType, lead, requestPayload, onBack }: Props) {
+  const meta = AUDIT_TYPE_META[auditType]
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [bom, setBom] = useState<Bom | null>(null)
-  const [rec, setRec] = useState<Recommendation | null>(null)
+  const [rec, setRec] = useState<NormalizedRecommendation | null>(null)
   const [downloading, setDownloading] = useState(false)
   const [chat, setChat] = useState<ChatMessage[]>([
     {
       role: 'assistant',
-      content: `Hi ${lead.name?.split(' ')[0] || 'there'}, I'm Aria — Calvera's solar assistant. Your audit is sized below. Ask me anything about it (e.g. "Is this enough for my fridge and pump?" or "Show me a smaller battery option").`,
+      content: `Hi ${lead.name?.split(' ')[0] || 'there'}, I'm Aria — Calvera's assistant. Your ${meta.label.toLowerCase()} quotation is sized below. Ask me anything about it, or how to adjust it.`,
     },
   ])
   const [chatInput, setChatInput] = useState('')
   const [chatSending, setChatSending] = useState(false)
   const chatEndRef = useRef<HTMLDivElement | null>(null)
 
-  // Fetch the recommendation+BOM on mount
+  // Fetch the recommendation on mount (and whenever the payload changes).
   useEffect(() => {
     let cancelled = false
     ;(async () => {
@@ -89,20 +104,12 @@ export function StepQuotation({ lead, appliances, onBack }: Props) {
         const res = await fetch('/api/power-audit/recommendation', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            appliances: appliances.map((a) => ({
-              name: a.name,
-              wattage: a.wattage,
-              quantity: a.quantity,
-              hoursPerDay: a.hoursPerDay,
-            })),
-          }),
+          body: JSON.stringify(requestPayload),
         })
         const body = await res.json().catch(() => ({}))
         if (!res.ok) throw new Error(body?.error ?? `HTTP ${res.status}`)
         if (cancelled) return
-        setRec(body.recommendation as Recommendation)
-        setBom(body.bom as Bom)
+        setRec(body.recommendation as NormalizedRecommendation)
       } catch (err) {
         if (cancelled) return
         setError((err as Error).message)
@@ -113,7 +120,7 @@ export function StepQuotation({ lead, appliances, onBack }: Props) {
     return () => {
       cancelled = true
     }
-  }, [appliances])
+  }, [requestPayload])
 
   // Auto-scroll chat
   useEffect(() => {
@@ -132,52 +139,7 @@ export function StepQuotation({ lead, appliances, onBack }: Props) {
       const res = await fetch('/api/power-audit/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          messages: next,
-          context: rec
-            ? {
-                panelWattsTotal: rec.panelWattsTotal,
-                inverterWatts: rec.inverterWatts,
-                batteryWh: rec.batteryWh,
-                dailyEnergyWh: rec.dailyEnergyWh,
-                // Match what's shown on screen and on the PDF subtotal.
-                estimatedPriceKes: bom?.estimatedTotalKes ?? rec.estimatedPriceKes,
-                appliances: appliances.map((a) => ({
-                  name: a.name,
-                  wattage: a.wattage,
-                  quantity: a.quantity,
-                  hoursPerDay: a.hoursPerDay,
-                })),
-                bom: bom
-                  ? {
-                      panel: bom.panel
-                        ? {
-                            name: bom.panel.name,
-                            quantity: bom.panel.quantity,
-                            unitPriceKes: bom.panel.unitPriceKes,
-                          }
-                        : null,
-                      inverter: bom.inverter
-                        ? {
-                            name: bom.inverter.name,
-                            quantity: bom.inverter.quantity,
-                            unitPriceKes: bom.inverter.unitPriceKes,
-                          }
-                        : null,
-                      battery: bom.battery
-                        ? {
-                            name: bom.battery.name,
-                            quantity: bom.battery.quantity,
-                            unitPriceKes: bom.battery.unitPriceKes,
-                          }
-                        : null,
-                      mountingStructureKes: bom.mountingKes,
-                      installationKes: bom.installationKes,
-                    }
-                  : null,
-              }
-            : undefined,
-        }),
+        body: JSON.stringify({ messages: next, context: rec?.chatContext }),
       })
       const body = await res.json().catch(() => ({}))
       if (!res.ok) throw new Error(body?.error ?? `HTTP ${res.status}`)
@@ -202,18 +164,13 @@ export function StepQuotation({ lead, appliances, onBack }: Props) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          ...requestPayload,
           customer: {
             name: lead.name,
             phone: lead.phone,
             email: lead.email || undefined,
             address: lead.address || undefined,
           },
-          appliances: appliances.map((a) => ({
-            name: a.name,
-            wattage: a.wattage,
-            quantity: a.quantity,
-            hoursPerDay: a.hoursPerDay,
-          })),
         }),
       })
       if (!res.ok) {
@@ -240,11 +197,11 @@ export function StepQuotation({ lead, appliances, onBack }: Props) {
     return (
       <div className="rounded-2xl border border-border bg-white p-10 text-center">
         <Loader2 className="mx-auto h-6 w-6 animate-spin text-brand-700" />
-        <p className="mt-3 text-sm text-muted">Sizing your system from our catalog…</p>
+        <p className="mt-3 text-sm text-muted">Sizing your {meta.short.toLowerCase()} from our catalog…</p>
       </div>
     )
   }
-  if (error || !rec || !bom) {
+  if (error || !rec) {
     return (
       <div className="rounded-2xl border border-rose-200 bg-rose-50 p-6 text-sm text-rose-800">
         Could not generate a recommendation: {error ?? 'unknown error'}.
@@ -270,94 +227,40 @@ export function StepQuotation({ lead, appliances, onBack }: Props) {
               Step 3 of 3
             </span>
             <h2 className="text-lg font-bold tracking-tight text-fg sm:text-xl">
-              Recommended system
+              Recommended {meta.short.toLowerCase()}
             </h2>
-            <span className="text-xs text-muted">
-              Picked from Calvera&apos;s catalog
-            </span>
+            <span className="text-xs text-muted">Picked from Calvera&apos;s catalog</span>
           </div>
 
-          <div className="mt-3 grid grid-cols-3 gap-2 sm:gap-3">
-            <ChipStat label="Panels" value={`${rec.panelWattsTotal} W`} />
-            <ChipStat label="Inverter" value={`${rec.inverterWatts} W`} />
-            <ChipStat label="Battery" value={`${(rec.batteryWh / 1000).toFixed(1)} kWh`} />
-          </div>
+          {rec.summary.length > 0 && (
+            <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4 sm:gap-3">
+              {rec.summary.map((s) => (
+                <ChipStat key={s.label} label={s.label} value={s.value} />
+              ))}
+            </div>
+          )}
         </div>
 
         <ul className="space-y-3">
-          {bom.panel ? (
-            <BomCard
-              icon={<SolarPanel className="h-5 w-5" />}
-              kind="Solar panels"
-              item={bom.panel}
-              extra={`Total ${bom.panel.totalWatts}W`}
-            />
-          ) : (
-            <MissingCard
-              icon={<SolarPanel className="h-5 w-5" />}
-              kind="Solar panels"
-              note={`No panel in stock matches ${rec.panelWattsTotal}W — talk to us to source one.`}
-            />
-          )}
-          {bom.inverter ? (
-            <BomCard icon={<Cpu className="h-5 w-5" />} kind="Inverter" item={bom.inverter} />
-          ) : (
-            <MissingCard
-              icon={<Cpu className="h-5 w-5" />}
-              kind="Inverter"
-              note={`No inverter in stock matches ${rec.inverterWatts}W.`}
-            />
-          )}
-          {bom.battery ? (
-            <BomCard
-              icon={<Battery className="h-5 w-5" />}
-              kind="Battery storage"
-              item={bom.battery}
-              extra={
-                bom.battery.totalWh
-                  ? `${(bom.battery.totalWh / 1000).toFixed(2)} kWh total`
-                  : undefined
-              }
-            />
-          ) : (
-            <MissingCard
-              icon={<Battery className="h-5 w-5" />}
-              kind="Battery storage"
-              note={`No battery in stock matches ${(rec.batteryWh / 1000).toFixed(1)} kWh.`}
-            />
-          )}
-          {bom.mountingKes > 0 && (
-            <SimpleCostCard
-              icon={<Frame className="h-5 w-5" />}
-              kind="Mounting"
-              title="Solar mounting structure"
-              description={
-                bom.panel
-                  ? `Roof rails / brackets sized for ${bom.panel.quantity} panel${bom.panel.quantity === 1 ? '' : 's'} (KES 15,000 per 4 panels, prorated)`
-                  : 'KES 15,000 per 4 panels, prorated'
-              }
-              totalKes={bom.mountingKes}
-            />
-          )}
-          {bom.installationKes > 0 && (
-            <SimpleCostCard
-              icon={<Wrench className="h-5 w-5" />}
-              kind="Installation"
-              title="Professional installation"
-              description="20% of materials · vetted installer · site survey · commissioning"
-              totalKes={bom.installationKes}
-            />
-          )}
+          {rec.items.map((item) => (
+            <BomCard key={`${item.kind}-${item.productId}`} item={item} />
+          ))}
+          {rec.costLines.map((line) => (
+            <SimpleCostCard key={line.kind} line={line} />
+          ))}
+          {rec.missing.map((m) => (
+            <MissingCard key={m.kind} missing={m} />
+          ))}
         </ul>
 
         <div className="rounded-2xl border border-border bg-brand-50 p-5">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
               <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-brand-700">
-                Indicative system cost
+                Indicative total cost
               </p>
               <p className="mt-1 text-3xl font-extrabold text-brand-800">
-                {formatKes(bom.estimatedTotalKes)}
+                {formatKes(rec.estimatedTotalKes)}
               </p>
               <p className="mt-1 text-xs text-muted">
                 Final price confirmed after a free site survey.
@@ -387,12 +290,11 @@ export function StepQuotation({ lead, appliances, onBack }: Props) {
           onClick={onBack}
           className="inline-flex items-center gap-2 rounded-full border border-border bg-white px-5 py-2.5 text-sm font-medium text-fg hover:border-fg/30"
         >
-          <ArrowLeft className="h-4 w-4" /> Back to power needs
+          <ArrowLeft className="h-4 w-4" /> Back to {meta.needsStepLabel.toLowerCase()}
         </button>
       </div>
 
-      {/* Chat panel — fixed height, internal scroll, sticky on lg+ so it
-          never stretches with the BoM column */}
+      {/* Chat panel — fixed height, internal scroll, sticky on lg+ */}
       <aside className="flex h-150 flex-col self-start rounded-2xl border border-border bg-white lg:sticky lg:top-6 lg:h-[clamp(560px,calc(100vh-3rem),720px)]">
         <div className="flex items-center gap-3 border-b border-border px-4 py-3">
           <span className="grid h-9 w-9 place-items-center rounded-full bg-brand-50 text-brand-800">
@@ -408,9 +310,7 @@ export function StepQuotation({ lead, appliances, onBack }: Props) {
           {chat.map((m, i) => (
             <ChatBubble key={i} role={m.role} content={m.content} />
           ))}
-          {chatSending && (
-            <ChatBubble role="assistant" content="…" />
-          )}
+          {chatSending && <ChatBubble role="assistant" content="…" />}
           <div ref={chatEndRef} />
         </div>
 
@@ -444,17 +344,7 @@ function ChipStat({ label, value }: { label: string; value: string }) {
   )
 }
 
-function BomCard({
-  icon,
-  kind,
-  item,
-  extra,
-}: {
-  icon: React.ReactNode
-  kind: string
-  item: BomItem
-  extra?: string
-}) {
+function BomCard({ item }: { item: NormalizedItem }) {
   const total = item.unitPriceKes * item.quantity
   return (
     <li className="rounded-2xl border border-border bg-white p-4">
@@ -472,14 +362,17 @@ function BomCard({
           />
         </Link>
         <div className="min-w-0 flex-1">
-          <p className="text-[10px] font-semibold uppercase tracking-wider text-muted">{kind}</p>
-          <Link href={`/products/${item.slug}`} className="text-sm font-bold text-fg hover:text-brand-700">
+          <p className="text-[10px] font-semibold uppercase tracking-wider text-muted">{item.kind}</p>
+          <Link
+            href={`/products/${item.slug}`}
+            className="text-sm font-bold text-fg hover:text-brand-700"
+          >
             {item.name}
           </Link>
           {item.shortDescription && (
             <p className="mt-1 line-clamp-2 text-xs text-muted">{item.shortDescription}</p>
           )}
-          {extra && <p className="mt-1 text-[11px] font-medium text-brand-700">{extra}</p>}
+          {item.extra && <p className="mt-1 text-[11px] font-medium text-brand-700">{item.extra}</p>}
         </div>
         <div className="text-right">
           <p className="text-xs text-muted">
@@ -492,57 +385,39 @@ function BomCard({
   )
 }
 
-function SimpleCostCard({
-  icon,
-  kind,
-  title,
-  description,
-  totalKes,
-}: {
-  icon: React.ReactNode
-  kind: string
-  title: string
-  description?: string
-  totalKes: number
-}) {
+function SimpleCostCard({ line }: { line: NormalizedCostLine }) {
   return (
     <li className="rounded-2xl border border-border bg-white p-4">
       <div className="flex items-start gap-3">
         <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-soft text-fg/85 sm:h-16 sm:w-16">
-          {icon}
+          {kindIcon(line.kind)}
         </span>
         <div className="min-w-0 flex-1">
-          <p className="text-[10px] font-semibold uppercase tracking-wider text-muted">{kind}</p>
-          <p className="text-sm font-bold text-fg">{title}</p>
-          {description && <p className="mt-1 text-xs text-muted">{description}</p>}
+          <p className="text-[10px] font-semibold uppercase tracking-wider text-muted">{line.kind}</p>
+          <p className="text-sm font-bold text-fg">{line.title}</p>
+          {line.description && <p className="mt-1 text-xs text-muted">{line.description}</p>}
         </div>
         <div className="text-right">
-          <p className="text-sm font-extrabold text-fg">{formatKes(totalKes)}</p>
+          <p className="text-sm font-extrabold text-fg">{formatKes(line.totalKes)}</p>
         </div>
       </div>
     </li>
   )
 }
 
-function MissingCard({
-  icon,
-  kind,
-  note,
-}: {
-  icon: React.ReactNode
-  kind: string
-  note: string
-}) {
+function MissingCard({ missing }: { missing: NormalizedMissing }) {
   return (
     <li className="rounded-2xl border border-dashed border-border bg-soft/40 p-4">
       <div className="flex items-start gap-3">
         <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-white text-fg/55">
-          {icon}
+          {kindIcon(missing.kind)}
         </span>
         <div className="min-w-0 flex-1">
-          <p className="text-[10px] font-semibold uppercase tracking-wider text-muted">{kind}</p>
+          <p className="text-[10px] font-semibold uppercase tracking-wider text-muted">
+            {missing.kind}
+          </p>
           <p className="mt-1 text-sm font-semibold text-fg/85">Sourced on request</p>
-          <p className="mt-0.5 text-xs text-muted">{note}</p>
+          <p className="mt-0.5 text-xs text-muted">{missing.note}</p>
         </div>
       </div>
     </li>

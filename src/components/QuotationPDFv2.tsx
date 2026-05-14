@@ -9,23 +9,27 @@ export type QuotationLineItem = {
   totalKes: number
 }
 
+/** A single stat shown in the summary pill (e.g. "Panels" → "2000W"). */
+export type QuotationSummaryStat = {
+  label: string
+  value: string
+}
+
 export type QuotationProps = {
   quotationNumber: string
   date: string
   /** Optional logo source — data URI or absolute file path. */
   logoSrc?: string | null
+  /** Header sub-line, e.g. "Solar System Quote" / "Solar Water Heater Quote". */
+  quoteKind?: string
   customer: {
     name: string
     phone: string
     email?: string
     address?: string
   }
-  systemSummary: {
-    panelWattsTotal: number
-    inverterWatts: number
-    batteryWh: number
-    dailyEnergyWh: number
-  }
+  /** Up to ~4 headline stats for the summary pill. */
+  systemSummary: QuotationSummaryStat[]
   items: QuotationLineItem[]
   subtotalKes: number
   business: {
@@ -220,6 +224,7 @@ export function QuotationPDFv2(props: QuotationProps): React.ReactElement<Docume
     quotationNumber,
     date,
     logoSrc,
+    quoteKind,
     customer,
     systemSummary,
     items,
@@ -250,7 +255,7 @@ export function QuotationPDFv2(props: QuotationProps): React.ReactElement<Docume
             <Text style={styles.metaTitle}>Quotation</Text>
             <Text style={styles.metaLine}>No. {quotationNumber}</Text>
             <Text style={styles.metaLine}>Date {date}</Text>
-            <Text style={styles.metaLine}>Solar System Quote</Text>
+            {quoteKind && <Text style={styles.metaLine}>{quoteKind}</Text>}
           </View>
         </View>
 
@@ -272,34 +277,22 @@ export function QuotationPDFv2(props: QuotationProps): React.ReactElement<Docume
             <Text style={styles.partyLine}>{business.phone}</Text>
             <Text style={styles.partyLine}>{business.email}</Text>
             <Text style={[styles.partyLine, { color: C.muted, marginTop: 6 }]}>
-              Nairobi, Kenya
+              Nairobi
             </Text>
           </View>
         </View>
 
         {/* System summary pill */}
-        <View style={styles.systemPill}>
-          <View style={styles.pillItem}>
-            <Text style={styles.pillLabel}>Solar Panels</Text>
-            <Text style={styles.pillValue}>{systemSummary.panelWattsTotal}W</Text>
+        {systemSummary.length > 0 && (
+          <View style={styles.systemPill}>
+            {systemSummary.map((stat, i) => (
+              <View key={i} style={styles.pillItem}>
+                <Text style={styles.pillLabel}>{stat.label}</Text>
+                <Text style={styles.pillValue}>{stat.value}</Text>
+              </View>
+            ))}
           </View>
-          <View style={styles.pillItem}>
-            <Text style={styles.pillLabel}>Inverter</Text>
-            <Text style={styles.pillValue}>{systemSummary.inverterWatts}W</Text>
-          </View>
-          <View style={styles.pillItem}>
-            <Text style={styles.pillLabel}>Battery</Text>
-            <Text style={styles.pillValue}>
-              {(systemSummary.batteryWh / 1000).toFixed(1)} kWh
-            </Text>
-          </View>
-          <View style={styles.pillItem}>
-            <Text style={styles.pillLabel}>Daily energy</Text>
-            <Text style={styles.pillValue}>
-              {(systemSummary.dailyEnergyWh / 1000).toFixed(2)} kWh
-            </Text>
-          </View>
-        </View>
+        )}
 
         {/* Items table */}
         <View style={styles.tableHeader}>
@@ -331,9 +324,9 @@ export function QuotationPDFv2(props: QuotationProps): React.ReactElement<Docume
         {/* Terms */}
         <Text style={styles.termsHeading}>Terms</Text>
         <Text style={styles.termsBody}>
-          This is an indicative quotation generated from your Power Audit. Final pricing is
-          confirmed after a free site survey by a Calvera-vetted installer. Pricing is in Kenyan
-          Shillings (KES) and excludes site-specific civil works.
+          This is an indicative quotation generated online. Final pricing is
+          confirmed after a free site survey by a Calvera-vetted installer. Pricing is in
+          shillings (KES) and excludes site-specific civil works.
         </Text>
         {notes && notes.length > 0 && (
           <View style={{ marginTop: 6 }}>
@@ -345,7 +338,7 @@ export function QuotationPDFv2(props: QuotationProps): React.ReactElement<Docume
           </View>
         )}
         <Text style={[styles.termsBody, { marginTop: 10 }]}>
-          Quotation valid for 30 days. Payment on delivery (M-Pesa or cash). Installation typically
+          Quotation valid for 30 days. Payment on delivery (mobile money or cash). Installation typically
           completes within 5–10 working days from confirmation. Manufacturer warranty applies on all
           components: panels (25 yrs), inverters (2–5 yrs), batteries (2–5 yrs).
         </Text>

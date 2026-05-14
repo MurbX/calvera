@@ -3,17 +3,21 @@
 import { useState } from 'react'
 import { ArrowRight, ShieldCheck } from 'lucide-react'
 import {
+  AUDIT_TYPE_META,
   BILL_LABEL,
   ROOFTOP_LABEL,
+  type AuditType,
   type PowerAuditLead,
 } from '@/lib/power-audit-types'
 
 type Props = {
   initial: PowerAuditLead
+  auditType: AuditType
   onSaved: (leadId: number | string, lead: PowerAuditLead) => void
 }
 
-export function StepLead({ initial, onSaved }: Props) {
+export function StepLead({ initial, auditType, onSaved }: Props) {
+  const meta = AUDIT_TYPE_META[auditType]
   const [lead, setLead] = useState<PowerAuditLead>(initial)
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -34,7 +38,7 @@ export function StepLead({ initial, onSaved }: Props) {
       const res = await fetch('/api/power-audit/lead-upsert', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(lead),
+        body: JSON.stringify({ ...lead, service: auditType }),
       })
       const body = await res.json().catch(() => ({}))
       if (!res.ok) throw new Error(body?.error ?? `HTTP ${res.status}`)
@@ -50,9 +54,9 @@ export function StepLead({ initial, onSaved }: Props) {
     <form onSubmit={onSubmit} className="space-y-5 rounded-2xl border border-border bg-white p-5 sm:p-7">
       <div>
         <h2 className="text-xl font-bold tracking-tight text-fg sm:text-2xl">
-          Start your personal assessment
+          Start your {meta.label.toLowerCase()} assessment
         </h2>
-        <p className="mt-1 text-sm text-muted">Step 1 of 4 — tell us about you.</p>
+        <p className="mt-1 text-sm text-muted">Step 1 of 3 — tell us about you.</p>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2">
@@ -67,7 +71,7 @@ export function StepLead({ initial, onSaved }: Props) {
             placeholder="Brian Mutuku"
           />
         </Field>
-        <Field label="Phone (M-Pesa)" required hint="We send order updates here.">
+        <Field label="Phone (Mobile money)" required hint="We send order updates here.">
           <input
             type="tel"
             autoComplete="tel"
@@ -75,7 +79,7 @@ export function StepLead({ initial, onSaved }: Props) {
             value={lead.phone}
             onChange={(e) => set('phone', e.target.value)}
             className="input"
-            placeholder="+254 7XX XXX XXX"
+            placeholder="Your phone number"
           />
         </Field>
         <Field label="Email" hint="For the PDF quotation we'll generate.">
@@ -94,7 +98,7 @@ export function StepLead({ initial, onSaved }: Props) {
             value={lead.address}
             onChange={(e) => set('address', e.target.value)}
             className="input"
-            placeholder="e.g. Kileleshwa, Nairobi"
+            placeholder="e.g. your neighbourhood or town"
           />
         </Field>
         <Field label="Average monthly electricity bill">
@@ -138,7 +142,7 @@ export function StepLead({ initial, onSaved }: Props) {
         disabled={submitting}
         className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-brand-800 px-6 py-3 text-sm font-semibold text-white transition hover:bg-brand-700 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
       >
-        {submitting ? 'Saving…' : <>Next: Define your power needs <ArrowRight className="h-4 w-4" /></>}
+        {submitting ? 'Saving…' : <>Next: {meta.needsStepLabel} <ArrowRight className="h-4 w-4" /></>}
       </button>
 
       <style jsx>{`

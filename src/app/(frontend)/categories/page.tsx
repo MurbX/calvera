@@ -20,7 +20,18 @@ export const metadata: Metadata = {
 }
 
 export default async function CategoriesIndexPage() {
-  const [categories, counts] = await Promise.all([getCategories(), getProductCountsByCategory()])
+  const [categoriesR, countsR] = await Promise.allSettled([
+    getCategories(),
+    getProductCountsByCategory(),
+  ])
+  const categories = categoriesR.status === 'fulfilled' ? categoriesR.value : []
+  const counts = countsR.status === 'fulfilled' ? countsR.value : {}
+  if (categoriesR.status === 'rejected' || countsR.status === 'rejected') {
+    console.error('[categories] partial fetch failure', {
+      categories: categoriesR.status === 'rejected' ? categoriesR.reason : null,
+      counts: countsR.status === 'rejected' ? countsR.reason : null,
+    })
+  }
 
   return (
     <div className="mx-auto max-w-350 px-4 py-12 sm:px-6">

@@ -248,7 +248,7 @@ export function QuotationPDF({
             <Text style={styles.customerName}>Calvera Tech Solutions</Text>
             <Text style={styles.customerLine}>{business.phone}</Text>
             <Text style={styles.customerLine}>{business.email}</Text>
-            <Text style={styles.customerLine}>Nairobi, Kenya</Text>
+            <Text style={styles.customerLine}>Nairobi</Text>
           </View>
         </View>
 
@@ -317,7 +317,7 @@ export function QuotationPDF({
         </View>
 
         <View style={styles.footer} fixed>
-          <Text>Calvera Tech Solutions • Nairobi, Kenya</Text>
+          <Text>Calvera Tech Solutions • Nairobi</Text>
           <Text>{business.phone} • {business.email}</Text>
         </View>
       </Page>

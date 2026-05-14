@@ -37,11 +37,15 @@ export const Orders: CollectionConfig = {
     {
       name: 'paymentMethod',
       type: 'select',
-      required: true,
-      defaultValue: 'mpesa_on_delivery',
-      admin: { description: 'How the customer chose to pay on delivery' },
+      defaultValue: 'whatsapp',
+      admin: {
+        description:
+          'How payment was arranged. New orders are placed via WhatsApp, where payment and delivery are settled directly.',
+      },
       options: [
-        { label: 'M-Pesa on delivery', value: 'mpesa_on_delivery' },
+        { label: 'Arranged on WhatsApp', value: 'whatsapp' },
+        // Legacy values — kept so older orders still display correctly.
+        { label: 'Mobile money on delivery', value: 'mpesa_on_delivery' },
         { label: 'Cash on delivery', value: 'cash_on_delivery' },
       ],
     },
@@ -51,15 +55,15 @@ export const Orders: CollectionConfig = {
       required: true,
       defaultValue: 'standard_countrywide',
       options: [
-        { label: 'Same-day Nairobi delivery', value: 'same_day_nairobi' },
-        { label: 'Standard countrywide delivery', value: 'standard_countrywide' },
-        { label: 'Pickup at Nairobi office', value: 'pickup_nairobi' },
+        { label: 'Same-day local delivery', value: 'same_day_nairobi' },
+        { label: 'Standard courier delivery', value: 'standard_countrywide' },
+        { label: 'Pickup at our office', value: 'pickup_nairobi' },
       ],
     },
     {
       name: 'paymentRef',
       type: 'text',
-      admin: { description: 'M-Pesa receipt or Stripe payment intent id' },
+      admin: { description: 'Mobile money receipt or Stripe payment intent id' },
     },
     {
       name: 'items',

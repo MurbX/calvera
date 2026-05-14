@@ -6,7 +6,7 @@ import { LeadForm } from '@/components/LeadForm'
 export const metadata: Metadata = {
   title: 'Solar Installation — Calvera Tech Solutions',
   description:
-    'Vetted local solar installers across all 47 counties. Free site survey, professional installation, and post-install support.',
+    'Vetted local solar installers in your area. Free site survey, professional installation, and post-install support.',
 }
 
 const STEPS = [
@@ -38,8 +38,8 @@ const STEPS = [
 
 const FAQ = [
   {
-    q: 'Do you install outside Nairobi?',
-    a: 'Yes — we have vetted installer partners across all 47 counties. Site surveys happen within 3 working days of your request.',
+    q: 'Do you install outside major towns?',
+    a: 'Yes — we have vetted installer partners across the areas we serve. Site surveys happen within 3 working days of your request.',
   },
   {
     q: 'How long does installation take?',
@@ -47,7 +47,7 @@ const FAQ = [
   },
   {
     q: 'Is there a payment plan?',
-    a: 'M-Pesa, card and bank transfer accepted. We can split payments into 50% on order and 50% on commissioning.',
+    a: 'Mobile money, card and bank transfer accepted. We can split payments into 50% on order and 50% on commissioning.',
   },
   {
     q: 'What warranty do I get?',
@@ -69,7 +69,7 @@ export default function InstallationPage() {
             Solar installation
           </p>
           <h1 className="mt-2 text-4xl font-extrabold tracking-tight text-fg md:text-5xl">
-            Vetted installers across all 47 counties
+            Vetted installers wherever you are
           </h1>
           <p className="mt-3 max-w-2xl text-sm leading-relaxed text-fg/75 md:text-base">
             Calvera works with a network of certified electricians and solar technicians. We
@@ -81,7 +81,7 @@ export default function InstallationPage() {
               href="/power-audit"
               className="inline-flex items-center gap-2 rounded-full bg-brand-800 px-6 py-3 text-sm font-semibold text-white hover:bg-brand-700"
             >
-              Size my system
+              Get a Quote
             </Link>
             <a
               href="#installer-form"

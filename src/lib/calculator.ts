@@ -1,8 +1,8 @@
 /**
- * Solar system sizing for Kenya.
+ * Solar system sizing.
  *
  * Assumptions used in the math (call them out in the PDF):
- *  - Average peak sun hours: 5 (Kenya equator average — conservative)
+ *  - Average peak sun hours: 5 (conservative equatorial average)
  *  - System losses (wiring, dust, temperature, charge controller): 30%
  *  - Battery depth-of-discharge for lithium: 80% (use 1.25× factor)
  *  - Inverter buffer over peak load: 25%
@@ -71,7 +71,7 @@ export function computeRecommendation(appliances: ApplianceInput[]): Recommendat
     INSTALLATION_FLAT
 
   const notes: string[] = [
-    `Sized for ${PEAK_SUN_HOURS} peak sun hours/day (Kenya average).`,
+    `Sized for ${PEAK_SUN_HOURS} peak sun hours/day (regional average).`,
     `Includes ${Math.round((SYSTEM_LOSSES - 1) * 100)}% allowance for system losses.`,
     `Inverter has a ${Math.round((INVERTER_BUFFER - 1) * 100)}% buffer over peak load.`,
     `Battery sized for ${DAYS_OF_AUTONOMY} day(s) of autonomy at ${Math.round((1 / BATTERY_DOD_FACTOR) * 100)}% DoD.`,

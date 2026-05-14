@@ -12,6 +12,7 @@ type Body = {
   address?: string
   monthlyBill?: string
   rooftopType?: string
+  service?: string
 }
 
 const VALID_BILLS = new Set([
@@ -23,8 +24,9 @@ const VALID_BILLS = new Set([
   'over_50k',
 ])
 const VALID_ROOFS = new Set(['concrete', 'iron_sheet', 'tile', 'other'])
+const VALID_SERVICES = new Set(['solar', 'water_heater', 'flood_light'])
 
-// Normalize Kenyan phone numbers so we can deduplicate reliably:
+// Normalize local phone numbers so we can deduplicate reliably:
 //   "+254 723 284 994" → "254723284994"
 //   "0723 284 994"     → "254723284994"
 function normalizePhone(raw: string): string {
@@ -51,6 +53,8 @@ export async function POST(request: Request) {
     body.monthlyBill && VALID_BILLS.has(body.monthlyBill) ? body.monthlyBill : undefined
   const rooftopType =
     body.rooftopType && VALID_ROOFS.has(body.rooftopType) ? body.rooftopType : undefined
+  const service =
+    body.service && VALID_SERVICES.has(body.service) ? body.service : undefined
 
   if (!name || name.length < 2) {
     return NextResponse.json({ error: 'Name is required.' }, { status: 400 })
@@ -68,6 +72,7 @@ export async function POST(request: Request) {
     address,
     monthlyBill,
     rooftopType,
+    service,
     source: 'power_audit' as const,
   }
 

@@ -6,7 +6,7 @@ const FEATURE_CARDS: Offer[] = [
     kind: 'feature',
     title: 'Professional Installation Partner',
     description:
-      'Our vetted installer network covers all 47 counties. Free site survey, certified electricians, full post-install support and warranty fulfillment.',
+      'Our vetted installer network covers every region. Free site survey, certified electricians, full post-install support and warranty fulfillment.',
     price: 'Free site survey',
     tagline: '500+ installations completed',
     href: '/installation',
@@ -24,11 +24,11 @@ const FEATURE_CARDS: Offer[] = [
   },
   {
     kind: 'feature',
-    title: 'Same-day Nairobi Delivery',
+    title: 'Same-day Local Delivery',
     description:
-      'Order before 1pm and we hand-deliver across Nairobi metro the same day. Countrywide courier with tracking for orders outside the city.',
+      'Order before 1pm and we hand-deliver across the metro the same day. Tracked courier delivery for orders outside town.',
     price: 'From KSh 500',
-    tagline: 'Countrywide via courier',
+    tagline: 'Tracked courier delivery',
     href: '/shop',
     iconKey: 'truck',
   },

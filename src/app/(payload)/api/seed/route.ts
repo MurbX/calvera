@@ -3,6 +3,7 @@ import { revalidateTag } from 'next/cache'
 import { getPayload } from 'payload'
 import config from '@payload-config'
 import { CATEGORY_NAV, PRODUCTS } from '@/data/products'
+import { PROJECTS } from '@/data/projects'
 
 export async function POST(request: Request) {
   // In production, require Authorization: Bearer <SEED_TOKEN> so random
@@ -31,6 +32,8 @@ export async function POST(request: Request) {
     productsCreated: 0,
     productsSkipped: 0,
     productsDeleted: 0,
+    projectsCreated: 0,
+    projectsSkipped: 0,
     errors: [] as string[],
   }
 
@@ -196,11 +199,53 @@ export async function POST(request: Request) {
     }
   }
 
+  // Projects — the installations carried over from the previous site.
+  // Upsert by slug; once seeded, the client manages these from the admin.
+  for (const proj of PROJECTS) {
+    try {
+      const data = {
+        title: proj.title,
+        slug: proj.slug,
+        category: proj.category,
+        location: proj.location,
+        capacity: proj.capacity,
+        summary: proj.summary,
+        imageUrl: proj.imageUrl,
+        isFeatured: Boolean(proj.isFeatured),
+        isPublished: true,
+        order: proj.order,
+      }
+
+      const existing = await payload.find({
+        collection: 'projects',
+        where: { slug: { equals: proj.slug } },
+        limit: 1,
+        depth: 0,
+      })
+
+      if (existing.docs[0]) {
+        await payload.update({
+          collection: 'projects',
+          id: existing.docs[0].id,
+          data,
+        })
+        stats.projectsSkipped++ // counts updates
+        continue
+      }
+
+      await payload.create({ collection: 'projects', data })
+      stats.projectsCreated++
+    } catch (err) {
+      stats.errors.push(`Project ${proj.slug}: ${(err as Error).message}`)
+    }
+  }
+
   // Flush cross-request caches so the storefront sees the new data on the
   // next render instead of waiting for the 5-min `unstable_cache` window.
   revalidateTag('products', 'max')
   revalidateTag('products:featured', 'max')
   revalidateTag('categories', 'max')
+  revalidateTag('projects', 'max')
 
   return NextResponse.json(stats)
 }

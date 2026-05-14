@@ -173,9 +173,9 @@ export function HeaderNav({ categories, featuredProducts }: Props) {
 
             <div className="mt-4 flex items-center justify-between gap-3 rounded-xl bg-brand-800 p-4 text-white">
               <div>
-                <div className="text-sm font-bold">Power Audit</div>
+                <div className="text-sm font-bold">Get a Quote</div>
                 <div className="text-xs text-white/75">
-                  Size your system with our 4-step assessment and download a PDF quotation.
+                  Size a solar system, water heater or flood lights and download a PDF quotation.
                 </div>
               </div>
               <Link
@@ -287,6 +287,7 @@ export function HeaderNav({ categories, featuredProducts }: Props) {
       </div>
 
       <Link href="/installation" className="hover:text-brand-700">Installation</Link>
+      <Link href="/projects" className="hover:text-brand-700">Projects</Link>
       <Link href="/about" className="hover:text-brand-700">About</Link>
       <Link href="/contact" className="hover:text-brand-700">Contact</Link>
     </nav>

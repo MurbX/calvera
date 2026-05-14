@@ -129,7 +129,7 @@ export default async function HomePage({ searchParams }: Props) {
               Featured this month
             </p>
             <h2 className="mt-2 text-3xl font-bold tracking-tight text-fg md:text-4xl">
-              Kenya&apos;s Solar Products!
+              Our Solar Products!
             </h2>
           </div>
           <Link
@@ -198,7 +198,7 @@ export default async function HomePage({ searchParams }: Props) {
                 href="/power-audit"
                 className="inline-flex items-center gap-2 rounded-full bg-amber-400 px-6 py-3 text-sm font-semibold text-brand-900 transition hover:bg-amber-300"
               >
-                Open the calculator <ArrowRight className="h-4 w-4" />
+                Get a Quote <ArrowRight className="h-4 w-4" />
               </Link>
               <Link
                 href="/installation"

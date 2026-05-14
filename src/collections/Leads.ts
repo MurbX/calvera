@@ -4,7 +4,7 @@ export const Leads: CollectionConfig = {
   slug: 'leads',
   admin: {
     useAsTitle: 'name',
-    defaultColumns: ['name', 'phone', 'source', 'status', 'createdAt'],
+    defaultColumns: ['name', 'phone', 'service', 'source', 'status', 'createdAt'],
   },
   access: {
     read: ({ req }) => Boolean(req.user),
@@ -25,7 +25,7 @@ export const Leads: CollectionConfig = {
     {
       name: 'monthlyBill',
       type: 'select',
-      admin: { description: 'Average monthly electricity bill (Kenya Power) — used to size the system.' },
+      admin: { description: 'Average monthly electricity bill — used to size the system.' },
       options: [
         { label: 'Under KES 2,000', value: 'under_2k' },
         { label: 'KES 2,000 – 5,000', value: '2k_5k' },
@@ -44,6 +44,16 @@ export const Leads: CollectionConfig = {
         { label: 'Iron sheet (mabati)', value: 'iron_sheet' },
         { label: 'Tile', value: 'tile' },
         { label: 'Other', value: 'other' },
+      ],
+    },
+    {
+      name: 'service',
+      type: 'select',
+      admin: { description: 'Which Calvera service this Power Audit lead is sizing.' },
+      options: [
+        { label: 'Solar power system', value: 'solar' },
+        { label: 'Solar water heater', value: 'water_heater' },
+        { label: 'Solar flood lights', value: 'flood_light' },
       ],
     },
     {

@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { getPayload } from 'payload'
 import config from '@payload-config'
-import { deliveryFee, type DeliveryMethod, type PaymentMethod } from '@/lib/checkout'
+import { type DeliveryMethod } from '@/lib/checkout'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -24,7 +24,6 @@ type Body = {
     notes?: string
   }
   deliveryMethod: DeliveryMethod
-  paymentMethod: PaymentMethod
   items: Item[]
 }
 
@@ -33,7 +32,6 @@ const VALID_DELIVERY: DeliveryMethod[] = [
   'standard_countrywide',
   'pickup_nairobi',
 ]
-const VALID_PAYMENT: PaymentMethod[] = ['mpesa_on_delivery', 'cash_on_delivery']
 
 function generateOrderNumber() {
   const yyyymmdd = new Date().toISOString().slice(0, 10).replace(/-/g, '')
@@ -61,9 +59,6 @@ export async function POST(request: Request) {
   if (!VALID_DELIVERY.includes(body.deliveryMethod)) {
     return NextResponse.json({ error: 'Invalid delivery method' }, { status: 400 })
   }
-  if (!VALID_PAYMENT.includes(body.paymentMethod)) {
-    return NextResponse.json({ error: 'Invalid payment method' }, { status: 400 })
-  }
   if (body.deliveryMethod !== 'pickup_nairobi' && !body.shippingAddress?.line1?.trim()) {
     return NextResponse.json({ error: 'Shipping address is required' }, { status: 400 })
   }
@@ -83,8 +78,8 @@ export async function POST(request: Request) {
   }
 
   const subtotal = items.reduce((s, i) => s + i.lineTotal, 0)
-  const shipping = deliveryFee(body.deliveryMethod)
-  const total = subtotal + shipping
+  const shipping = 0 // Delivery fee confirmed on WhatsApp — varies by location
+  const total = subtotal
   const orderNumber = generateOrderNumber()
 
   try {
@@ -94,7 +89,8 @@ export async function POST(request: Request) {
       data: {
         orderNumber,
         status: 'pending',
-        paymentMethod: body.paymentMethod,
+        // Orders are placed via WhatsApp — payment is arranged there.
+        paymentMethod: 'whatsapp',
         deliveryMethod: body.deliveryMethod,
         items,
         subtotal,
@@ -109,7 +105,7 @@ export async function POST(request: Request) {
         shippingAddress: {
           line1: body.shippingAddress?.line1?.trim() || 'Pickup at office',
           line2: body.shippingAddress?.line2?.trim() || undefined,
-          city: body.shippingAddress?.city?.trim() || 'Nairobi',
+          city: body.shippingAddress?.city?.trim() || 'Pickup',
           county: body.shippingAddress?.county?.trim() || undefined,
           postalCode: body.shippingAddress?.postalCode?.trim() || undefined,
           notes: body.shippingAddress?.notes?.trim() || undefined,
@@ -118,11 +114,7 @@ export async function POST(request: Request) {
       overrideAccess: true,
     })
 
-    return NextResponse.json({
-      orderNumber,
-      total,
-      paymentMethod: body.paymentMethod,
-    })
+    return NextResponse.json({ orderNumber, total })
   } catch (err) {
     console.error('[/api/orders]', err)
     return NextResponse.json(

@@ -5,6 +5,7 @@ import { ProductCard } from '@/components/ProductCard'
 import { getPayload } from 'payload'
 import config from '@payload-config'
 import type { ProductRecord } from '@/lib/payload-data'
+import { withRetry } from '@/lib/db-retry'
 
 export const dynamic = 'force-dynamic'
 
@@ -26,27 +27,33 @@ export default async function SearchPage({ searchParams }: Props) {
   let total = 0
 
   if (query.length >= 2) {
-    const payload = await getPayload({ config })
-    const result = await payload.find({
-      collection: 'products',
-      where: {
-        and: [
-          { isPublished: { equals: true } },
-          {
-            or: [
-              { name: { like: query } },
-              { shortDescription: { like: query } },
-              { sku: { like: query } },
+    try {
+      const payload = await getPayload({ config })
+      const result = await withRetry(() =>
+        payload.find({
+          collection: 'products',
+          where: {
+            and: [
+              { isPublished: { equals: true } },
+              {
+                or: [
+                  { name: { like: query } },
+                  { shortDescription: { like: query } },
+                  { sku: { like: query } },
+                ],
+              },
             ],
           },
-        ],
-      },
-      limit: 50,
-      depth: 1,
-      overrideAccess: true,
-    })
-    items = result.docs as unknown as ProductRecord[]
-    total = result.totalDocs
+          limit: 50,
+          depth: 1,
+          overrideAccess: true,
+        }),
+      )
+      items = result.docs as unknown as ProductRecord[]
+      total = result.totalDocs
+    } catch (err) {
+      console.error('[search] query failed', err)
+    }
   }
 
   return (

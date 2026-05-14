@@ -12,9 +12,9 @@ export const metadata: Metadata = {
 }
 
 const DELIVERY_LABEL: Record<string, string> = {
-  same_day_nairobi: 'Same-day Nairobi delivery',
-  standard_countrywide: 'Standard countrywide delivery',
-  pickup_nairobi: 'Pickup at our Nairobi office',
+  same_day_nairobi: 'Same-day local delivery',
+  standard_countrywide: 'Standard courier delivery',
+  pickup_nairobi: 'Pickup at our office',
 }
 
 const STATUS_LABEL: Record<string, { label: string; tone: string }> = {

@@ -30,7 +30,7 @@ export function CalculatorForm() {
     name: '',
     phone: '',
     email: '',
-    location: 'Nairobi',
+    location: '',
     appliances: STARTER_APPLIANCES,
   })
   const [submitting, setSubmitting] = useState(false)
@@ -138,14 +138,14 @@ export function CalculatorForm() {
                 placeholder="Brian Mutuku"
               />
             </Field>
-            <Field label="Phone (M-Pesa)" required>
+            <Field label="Phone (Mobile money)" required>
               <input
                 type="tel"
                 value={state.phone}
                 onChange={(e) => setState((s) => ({ ...s, phone: e.target.value }))}
                 required
                 className="input"
-                placeholder="+254 7XX XXX XXX"
+                placeholder="Your phone number"
               />
             </Field>
             <Field label="Email">
@@ -163,7 +163,7 @@ export function CalculatorForm() {
                 value={state.location}
                 onChange={(e) => setState((s) => ({ ...s, location: e.target.value }))}
                 className="input"
-                placeholder="Nairobi"
+                placeholder="Your town or city"
               />
             </Field>
           </div>

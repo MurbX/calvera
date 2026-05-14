@@ -100,7 +100,7 @@ export async function POST(request: Request) {
   const base64 = Buffer.from(arrayBuf).toString('base64')
 
   try {
-    const model = getGemini().getGenerativeModel({
+    const model = (await getGemini()).getGenerativeModel({
       model: GEMINI_FLASH_MODEL,
       generationConfig: {
         temperature: 0.2,

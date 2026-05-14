@@ -17,38 +17,64 @@ type IncomingMessage = {
   content: string
 }
 
-type BomLine = { name: string; quantity: number; unitPriceKes: number } | null
+type LineItem = {
+  qty: number
+  product: string
+  description?: string
+  unitPriceKes: number
+  totalKes: number
+}
+
+/**
+ * The normalized `chatContext` produced by `power-audit-recommend.ts`. Shape
+ * varies by service, so everything beyond the shared keys is optional.
+ */
+type ChatContext = {
+  service?: 'solar' | 'water_heater' | 'flood_light'
+  estimatedPriceKes?: number
+  lineItems?: LineItem[]
+  // solar
+  panelWattsTotal?: number
+  inverterWatts?: number
+  batteryWh?: number
+  dailyEnergyWh?: number
+  totalConnectedWatts?: number
+  appliances?: { name: string; wattage: number; quantity: number; hoursPerDay: number }[]
+  // water heater
+  household?: number
+  bathrooms?: number
+  usage?: string
+  currentHeating?: string
+  litresNeeded?: number
+  recommendedLitres?: number
+  unitCount?: number
+  totalLitres?: number
+  // flood light
+  application?: string
+  recommendedWatts?: number
+  fixtureCount?: number
+  poleCount?: number
+  hoursPerNight?: number
+  totalWatts?: number
+}
 
 type Body = {
   messages: IncomingMessage[]
-  context?: {
-    panelWattsTotal?: number
-    inverterWatts?: number
-    batteryWh?: number
-    dailyEnergyWh?: number
-    estimatedPriceKes?: number
-    appliances?: { name: string; wattage: number; quantity: number; hoursPerDay: number }[]
-    bom?: {
-      panel: BomLine
-      inverter: BomLine
-      battery: BomLine
-      mountingStructureKes?: number
-      installationKes?: number
-    } | null
-  }
+  context?: ChatContext
 }
 
-const SYSTEM_PROMPT = `You are "Aria", Calvera Tech Solutions' friendly solar expert chatbot for Kenya.
-You help customers understand the system size we recommended for them and pick products from our catalog.
+const SYSTEM_PROMPT = `You are "Aria", Calvera Tech Solutions' friendly solar expert chatbot.
+Calvera supplies and installs solar power systems, solar water heaters and solar flood lights.
+You help customers understand the recommendation we generated for them and pick products from our catalog.
 
 Style:
 - Short, plain English. Bullet points when comparing options.
-- KES prices, Kenyan context (M-Pesa, Kenya Power, Nairobi metro etc.).
+- KES prices, local context (mobile money, grid power, metro delivery etc.).
 - Never invent prices. If a product isn't in the searchProducts() result, say so.
-- If someone asks "is this enough for my fridge and pump?" use the system context they were sized for.
+- Answer using the customer's audit context below — don't re-size from scratch unless asked.
 
 Tools:
-- searchProducts({ query, category? }) — search Calvera's product catalog. Use this whenever the user asks about a panel, inverter, battery, kit, light, etc.
+- searchProducts({ query, category? }) — search Calvera's product catalog. Use this whenever the user asks about a panel, inverter, battery, kit, light, water heater, etc.
 
 When the user asks something product-specific, ALWAYS call searchProducts first, then answer using only those results.`
 
@@ -62,7 +88,7 @@ const FUNCTION_DECLARATIONS: FunctionDeclaration[] = [
         query: {
           type: SchemaType.STRING,
           description:
-            'Free-text search, e.g. "3kVA hybrid inverter", "200Ah battery", "100W panel".',
+            'Free-text search, e.g. "3kVA hybrid inverter", "200Ah battery", "200W flood light", "300L water heater".',
         },
         category: {
           type: SchemaType.STRING,
@@ -114,41 +140,61 @@ function toGeminiHistory(messages: IncomingMessage[]): Content[] {
   }))
 }
 
-function buildSystemInstruction(context?: Body['context']): string {
-  if (!context) return SYSTEM_PROMPT
+/** Service-specific summary lines for the system instruction. */
+function contextLines(ctx: ChatContext): string[] {
   const lines: string[] = []
-  if (context.panelWattsTotal) lines.push(`- Sized panels: ${context.panelWattsTotal}W total`)
-  if (context.inverterWatts) lines.push(`- Inverter: ${context.inverterWatts}W`)
-  if (context.batteryWh) lines.push(`- Battery: ${(context.batteryWh / 1000).toFixed(1)}kWh`)
-  if (context.dailyEnergyWh) lines.push(`- Daily energy: ${(context.dailyEnergyWh / 1000).toFixed(2)} kWh/day`)
-  if (context.estimatedPriceKes) lines.push(`- Indicative system cost: ${formatKes(context.estimatedPriceKes)}`)
-  if (context.appliances?.length) {
-    lines.push("- Customer's appliance list:")
-    for (const a of context.appliances.slice(0, 12)) {
-      lines.push(`  · ${a.name} — ${a.wattage}W × ${a.quantity}, ${a.hoursPerDay} hrs/day`)
+
+  if (ctx.service === 'water_heater') {
+    lines.push('- Service: solar water heater')
+    if (ctx.household) lines.push(`- Household: ${ctx.household} people, ${ctx.bathrooms ?? 1} bathroom(s)`)
+    if (ctx.usage) lines.push(`- Usage intensity: ${ctx.usage}`)
+    if (ctx.currentHeating) lines.push(`- Current heating: ${ctx.currentHeating}`)
+    if (ctx.litresNeeded) lines.push(`- Estimated daily demand: ${ctx.litresNeeded} L`)
+    if (ctx.recommendedLitres)
+      lines.push(
+        `- Recommended: ${ctx.unitCount ?? 1} × ${ctx.recommendedLitres} L tank (${ctx.totalLitres ?? ctx.recommendedLitres} L total)`,
+      )
+  } else if (ctx.service === 'flood_light') {
+    lines.push('- Service: solar flood lights')
+    if (ctx.application) lines.push(`- Application: ${ctx.application}`)
+    if (ctx.recommendedWatts)
+      lines.push(`- Recommended fixture: ${ctx.recommendedWatts}W × ${ctx.fixtureCount ?? 1}`)
+    if (ctx.poleCount != null) lines.push(`- Mounting poles supplied: ${ctx.poleCount}`)
+    if (ctx.hoursPerNight) lines.push(`- Run time: ~${ctx.hoursPerNight} h/night`)
+    if (ctx.totalWatts) lines.push(`- Total lighting output: ${ctx.totalWatts}W`)
+  } else {
+    lines.push('- Service: solar power system')
+    if (ctx.panelWattsTotal) lines.push(`- Sized panels: ${ctx.panelWattsTotal}W total`)
+    if (ctx.inverterWatts) lines.push(`- Inverter: ${ctx.inverterWatts}W`)
+    if (ctx.batteryWh) lines.push(`- Battery: ${(ctx.batteryWh / 1000).toFixed(1)}kWh`)
+    if (ctx.dailyEnergyWh)
+      lines.push(`- Daily energy: ${(ctx.dailyEnergyWh / 1000).toFixed(2)} kWh/day`)
+    if (ctx.appliances?.length) {
+      lines.push("- Customer's appliance list:")
+      for (const a of ctx.appliances.slice(0, 12)) {
+        lines.push(`  · ${a.name} — ${a.wattage}W × ${a.quantity}, ${a.hoursPerDay} hrs/day`)
+      }
     }
   }
-  if (context.bom) {
-    const fmtLine = (label: string, item: BomLine) => {
-      if (!item) return `  · ${label}: not in stock — needs sourcing`
-      const total = item.unitPriceKes * item.quantity
-      return `  · ${label}: ${item.quantity}× ${item.name} @ ${formatKes(item.unitPriceKes)} each (${formatKes(total)})`
-    }
-    lines.push('- Recommended bill of materials (already shown to the customer):')
-    lines.push(fmtLine('Solar panel', context.bom.panel))
-    lines.push(fmtLine('Inverter', context.bom.inverter))
-    lines.push(fmtLine('Battery', context.bom.battery))
-    if (context.bom.mountingStructureKes && context.bom.mountingStructureKes > 0) {
+
+  if (ctx.estimatedPriceKes)
+    lines.push(`- Indicative total cost: ${formatKes(ctx.estimatedPriceKes)}`)
+
+  if (ctx.lineItems?.length) {
+    lines.push('- Quotation line items (already shown to the customer):')
+    for (const it of ctx.lineItems.slice(0, 12)) {
       lines.push(
-        `  · Solar mounting structure: ${formatKes(context.bom.mountingStructureKes)} (KES 15,000 per 4 panels, prorated)`,
-      )
-    }
-    if (context.bom.installationKes && context.bom.installationKes > 0) {
-      lines.push(
-        `  · Professional installation: ${formatKes(context.bom.installationKes)} (20% of materials)`,
+        `  · ${it.qty}× ${it.product} @ ${formatKes(it.unitPriceKes)} = ${formatKes(it.totalKes)}`,
       )
     }
   }
+
+  return lines
+}
+
+function buildSystemInstruction(context?: ChatContext): string {
+  if (!context) return SYSTEM_PROMPT
+  const lines = contextLines(context)
   if (lines.length === 0) return SYSTEM_PROMPT
   return `${SYSTEM_PROMPT}\n\n## This customer's audit\n${lines.join('\n')}`
 }
@@ -171,7 +217,7 @@ export async function POST(request: Request) {
   }
 
   try {
-    const model = getGemini().getGenerativeModel({
+    const model = (await getGemini()).getGenerativeModel({
       model: GEMINI_FLASH_MODEL,
       systemInstruction: buildSystemInstruction(body.context),
       tools: [{ functionDeclarations: FUNCTION_DECLARATIONS }],

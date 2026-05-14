@@ -14,8 +14,8 @@ export function SiteFooter() {
               <Truck className="h-5 w-5" />
             </span>
             <div>
-              <div className="text-sm font-semibold text-fg">Same-day Nairobi delivery</div>
-              <div className="text-xs text-muted">Countrywide via courier</div>
+              <div className="text-sm font-semibold text-fg">Same-day local delivery</div>
+              <div className="text-xs text-muted">Delivered via courier</div>
             </div>
           </div>
           <div className="flex items-center gap-3">
@@ -57,7 +57,7 @@ export function SiteFooter() {
             </div>
             <p className="mt-4 max-w-xs text-sm opacity-80">
               Reliable, affordable and smart solar solutions for homes, shops and businesses
-              across Kenya.
+              wherever you are.
             </p>
           </div>
           <div>
@@ -75,7 +75,8 @@ export function SiteFooter() {
             <ul className="mt-3 space-y-2 text-sm opacity-80">
               <li><Link href="/about" className="hover:text-white">About</Link></li>
               <li><Link href="/installation" className="hover:text-white">Installation</Link></li>
-              <li><Link href="/power-audit" className="hover:text-white">Solar calculator</Link></li>
+              <li><Link href="/projects" className="hover:text-white">Projects</Link></li>
+              <li><Link href="/power-audit" className="hover:text-white">Get a Quote</Link></li>
               <li><Link href="/contact" className="hover:text-white">Contact</Link></li>
             </ul>
           </div>
@@ -84,7 +85,7 @@ export function SiteFooter() {
             <ul className="mt-3 space-y-2 text-sm opacity-80">
               <li>{phone}</li>
               <li>{email}</li>
-              <li>Nairobi, Kenya</li>
+              <li>Nairobi</li>
             </ul>
           </div>
         </div>

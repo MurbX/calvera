@@ -90,7 +90,7 @@ export function ProfileForm({ customerId, initial }: Props) {
         </Field>
       </div>
 
-      <Field label="Phone" htmlFor="pf-phone" hint="M-Pesa-capable Safaricom number for delivery + payment.">
+      <Field label="Phone" htmlFor="pf-phone" hint="Phone number for delivery updates and payment.">
         <input
           id="pf-phone"
           type="tel"

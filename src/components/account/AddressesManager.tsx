@@ -31,7 +31,7 @@ const EMPTY: Address = {
   phone: '',
   line1: '',
   line2: '',
-  city: 'Nairobi',
+  city: '',
   county: '',
   postalCode: '',
   landmark: '',
@@ -335,10 +335,10 @@ function AddressForm({
           />
         </Field>
         <Field label="Town / City" required>
-          <input value={draft.city} onChange={set('city')} required className="input" placeholder="Nairobi" />
+          <input value={draft.city} onChange={set('city')} required className="input" placeholder="Your town or city" />
         </Field>
         <Field label="County">
-          <input value={draft.county ?? ''} onChange={set('county')} className="input" placeholder="Nairobi" />
+          <input value={draft.county ?? ''} onChange={set('county')} className="input" placeholder="Your county or region" />
         </Field>
         <Field label="Postal code">
           <input

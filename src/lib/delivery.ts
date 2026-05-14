@@ -2,10 +2,10 @@
  * Delivery-estimate helper.
  *
  * Rule of thumb (matches Calvera's actual SLA):
- *   - Order before 13:00 EAT, weekday → same-day Nairobi delivery
- *   - Order after 13:00 → next business day in Nairobi
+ *   - Order before 13:00, weekday → same-day local delivery
+ *   - Order after 13:00 → next business day
  *   - Saturday cut-off is 11:00, no Sunday delivery
- *   - Outside Nairobi → 1–3 business days via courier
+ *   - Outside the metro → 1–3 business days via courier
  */
 
 const TZ = 'Africa/Nairobi'
@@ -40,7 +40,7 @@ function nowInNairobi(): { date: Date; weekday: number; hour: number; minute: nu
 }
 
 export type DeliveryEstimate = {
-  /** Short headline, e.g. "Get it today in Nairobi" */
+  /** Short headline, e.g. "Get it today" */
   headline: string
   /** Subline with cut-off countdown or next-business-day note */
   subline: string
@@ -57,7 +57,7 @@ export function getDeliveryEstimate(): DeliveryEstimate {
 
   if (isSunday) {
     return {
-      headline: 'Delivered Monday in Nairobi',
+      headline: 'Delivered Monday',
       subline: 'Sundays we rest — orders placed today ship Monday morning.',
     }
   }
@@ -66,7 +66,7 @@ export function getDeliveryEstimate(): DeliveryEstimate {
     const h = Math.floor(minsUntilCutoff / 60)
     const m = minsUntilCutoff % 60
     return {
-      headline: 'Get it today in Nairobi',
+      headline: 'Get it today',
       subline: `Order in the next ${h}h ${m}m for same-day delivery.`,
     }
   }
@@ -78,7 +78,7 @@ export function getDeliveryEstimate(): DeliveryEstimate {
     return WEEKDAY_NAMES[(weekday + 1) % 7]
   })()
   return {
-    headline: `Delivered ${next} in Nairobi`,
+    headline: `Delivered ${next}`,
     subline: 'Cut-off has passed — your order goes out first thing the next business day.',
   }
 }

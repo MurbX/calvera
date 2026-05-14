@@ -15,9 +15,9 @@ export const metadata: Metadata = {
   metadataBase: new URL(
     process.env.NEXT_PUBLIC_SITE_URL ?? 'https://calvera.vercel.app',
   ),
-  title: 'Calvera Tech Solutions — Power Your Kenya Home',
+  title: 'Calvera Tech Solutions — Power Your Home',
   description:
-    'Solar panels, inverters, batteries and full kits delivered & installed across Kenya. Build your system with our solar calculator.',
+    'Solar panels, inverters, batteries and full kits delivered & installed wherever you are. Build your system with our solar calculator.',
   // Favicons come from src/app/icon.png + src/app/favicon.ico (Next.js
   // convention) — don't override here with the 1.8MB social-preview file.
   openGraph: {

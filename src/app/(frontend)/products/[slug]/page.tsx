@@ -38,7 +38,7 @@ export async function generateMetadata({ params }: Props) {
   return {
     title: `${product.name} — Calvera Tech Solutions`,
     description:
-      product.shortDescription ?? `${product.name} — available at Calvera Tech Solutions, Kenya.`,
+      product.shortDescription ?? `${product.name} — available at Calvera Tech Solutions.`,
   }
 }
 
@@ -47,9 +47,14 @@ export default async function ProductPage({ params }: Props) {
   const product = await getProductBySlug(slug)
   if (!product) notFound()
 
-  const related = (await getProductsByCategory(product.category.slug))
-    .filter((p) => p.id !== product.id)
-    .slice(0, 4)
+  let related: Awaited<ReturnType<typeof getProductsByCategory>> = []
+  try {
+    related = (await getProductsByCategory(product.category.slug))
+      .filter((p) => p.id !== product.id)
+      .slice(0, 4)
+  } catch (err) {
+    console.error('[product detail] failed to load related products', err)
+  }
 
   const delivery = getDeliveryEstimate()
   const inStock = (product.stock ?? 0) > 0
@@ -196,7 +201,7 @@ export default async function ProductPage({ params }: Props) {
                 {inStock ? (
                   <>
                     <CheckCircle2 className="h-4 w-4 text-emerald-600" />
-                    In stock — Nairobi warehouse
+                    In stock — ships from our warehouse
                   </>
                 ) : (
                   <>
@@ -243,7 +248,7 @@ export default async function ProductPage({ params }: Props) {
 
             <ul className="mt-6 grid grid-cols-2 gap-3 text-sm text-fg/80 sm:grid-cols-4">
               <TrustItem Icon={Banknote} label="Pay on delivery" />
-              <TrustItem Icon={Truck} label="Same-day Nairobi" />
+              <TrustItem Icon={Truck} label="Same-day dispatch" />
               <TrustItem Icon={ShieldCheck} label="Manufacturer warranty" />
               <TrustItem Icon={RotateCcw} label="7-day returns" />
             </ul>
@@ -261,10 +266,10 @@ export default async function ProductPage({ params }: Props) {
                   <div className="prose prose-sm max-w-none text-fg/85">
                     <p>
                       {product.shortDescription ??
-                        `${product.name} from Calvera Tech Solutions — sold and supported by Calvera in Kenya.`}
+                        `${product.name} from Calvera Tech Solutions — sold and supported by Calvera.`}
                     </p>
                     <p className="mt-3">
-                      Every order is checked, packed and shipped from our Nairobi warehouse. We
+                      Every order is checked, packed and shipped from our warehouse. We
                       stand behind every product with a manufacturer-backed warranty plus our own
                       12-month workmanship cover on installations.
                     </p>
@@ -277,7 +282,7 @@ export default async function ProductPage({ params }: Props) {
                 body: (
                   <div className="space-y-2 text-sm text-fg/85">
                     <p>
-                      Calvera operates a vetted installer network across all 47 counties.
+                      Calvera operates a vetted installer network across the areas we serve.
                       Free site survey before any commitment.
                     </p>
                     <ul className="list-disc space-y-1 pl-5 text-fg/80">
@@ -319,16 +324,16 @@ export default async function ProductPage({ params }: Props) {
                 body: (
                   <div className="space-y-2 text-sm text-fg/85">
                     <p>
-                      <span className="font-semibold text-fg">Nairobi metro:</span> Same-day
-                      delivery (order before 1pm Mon–Fri or 11am Sat). KSh 500 within Nairobi.
+                      <span className="font-semibold text-fg">Local delivery:</span> Same-day
+                      delivery (order before 1pm Mon–Fri or 11am Sat). KSh 500 within town.
                     </p>
                     <p>
-                      <span className="font-semibold text-fg">Countrywide:</span> Tracked courier
-                      to anywhere in Kenya — typically 1–3 working days. KSh 1,500 standard.
+                      <span className="font-semibold text-fg">Courier:</span> Tracked courier
+                      delivery — typically 1–3 working days. KSh 1,500 standard.
                     </p>
                     <p>
                       <span className="font-semibold text-fg">Pickup:</span> Free pickup at our
-                      Nairobi office (North Airport Rd, Embakasi) — usually ready within 2 hours
+                      office (North Airport Rd, Embakasi) — usually ready within 2 hours
                       of ordering.
                     </p>
                   </div>
@@ -342,7 +347,7 @@ export default async function ProductPage({ params }: Props) {
                     <div>
                       <p className="font-semibold text-fg">Can I pay on delivery?</p>
                       <p className="text-fg/75">
-                        Yes — choose Cash or M-Pesa on delivery at checkout. Pay only when your
+                        Yes — choose Cash or Mobile money on delivery at checkout. Pay only when your
                         order arrives.
                       </p>
                     </div>

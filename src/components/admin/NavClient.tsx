@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 
 export type NavItem = {
   href: string
@@ -30,6 +30,11 @@ const GROUPS: Group[] = [
         label: 'Calculator Quotes',
         slug: 'calculator-submissions',
       },
+      {
+        href: '/admin/collections/manual-quotes',
+        label: 'Manual Quotes',
+        slug: 'manual-quotes',
+      },
       { href: '/admin/collections/orders', label: 'Orders', slug: 'orders' },
       { href: '/admin/collections/customers', label: 'Customers', slug: 'customers' },
     ],
@@ -49,6 +54,12 @@ const GROUPS: Group[] = [
       { href: '/admin/collections/users', label: 'Team', slug: 'users' },
     ],
   },
+  {
+    label: 'Settings',
+    items: [
+      { href: '/admin/globals/site-settings', label: 'Site Settings', alwaysShow: true },
+    ],
+  },
 ]
 
 type Props = {
@@ -57,6 +68,12 @@ type Props = {
 
 export function NavClient({ visibleSlugs }: Props) {
   const pathname = usePathname() ?? '/admin'
+  const router = useRouter()
+
+  const handleLogout = async () => {
+    await fetch('/api/users/logout', { method: 'POST', credentials: 'include' })
+    router.push('/admin/login')
+  }
 
   const isActive = (href: string) => {
     if (href === '/admin') return pathname === '/admin' || pathname === '/admin/'
@@ -103,6 +120,17 @@ export function NavClient({ visibleSlugs }: Props) {
           )
         })}
       </nav>
+
+      <div className="cv-nav__logout">
+        <button
+          type="button"
+          onClick={handleLogout}
+          className="cv-nav__link"
+          style={{ width: '100%', border: 'none', background: 'none', cursor: 'pointer', textAlign: 'left' }}
+        >
+          <span>Log out</span>
+        </button>
+      </div>
     </aside>
   )
 }

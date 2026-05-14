@@ -17,7 +17,7 @@ import {
 export const metadata: Metadata = {
   title: 'About Calvera Tech Solutions',
   description:
-    'Calvera Tech Solutions delivers reliable, affordable and sustainable solar energy solutions for homes and businesses across Kenya — supply and installation of solar power systems, solar flood lights and solar water heaters.',
+    'Calvera Tech Solutions delivers reliable, affordable and sustainable solar energy solutions for homes and businesses everywhere — supply and installation of solar power systems, solar flood lights and solar water heaters.',
 }
 
 const REASONS = [
@@ -53,9 +53,9 @@ const REASONS = [
   },
   {
     Icon: Leaf,
-    title: 'Cleaner energy for Kenya',
+    title: 'Cleaner energy for all',
     body:
-      'Every kilowatt you generate is a kilowatt that didn\'t come from fossil fuel. Better for your bills, better for the country.',
+      'Every kilowatt you generate is a kilowatt that didn\'t come from fossil fuel. Better for your bills, better for the planet.',
   },
 ]
 
@@ -77,8 +77,8 @@ export default function AboutPage() {
           </h1>
           <p className="mt-4 max-w-3xl text-sm leading-relaxed text-fg/75 md:text-base">
             Calvera Tech Solutions was born from a simple mission — to provide reliable,
-            affordable and sustainable energy solutions to homes and businesses across
-            Kenya. We started with residential solar installations and have grown into
+            affordable and sustainable energy solutions to homes and businesses
+            everywhere. We started with residential solar installations and have grown into
             trusted commercial projects on the back of consistent quality and customer
             referrals.
           </p>
@@ -102,11 +102,11 @@ export default function AboutPage() {
               </p>
             </div>
             <h2 className="mt-4 text-2xl font-bold leading-tight text-fg md:text-3xl">
-              Lead Kenya's transition to sustainable energy.
+              Lead the transition to sustainable energy.
             </h2>
             <p className="mt-3 text-sm leading-relaxed text-muted">
               Deliver innovative, reliable and impactful solar solutions that power homes,
-              businesses and communities — system by system, county by county.
+              businesses and communities — system by system, community by community.
             </p>
           </div>
 
@@ -170,7 +170,7 @@ export default function AboutPage() {
                 href="/power-audit"
                 className="inline-flex items-center gap-2 rounded-full bg-brand-800 px-6 py-3 text-sm font-semibold text-white hover:bg-brand-700"
               >
-                <Wrench className="h-4 w-4" /> Size my system
+                <Wrench className="h-4 w-4" /> Get a Quote
               </Link>
               <Link
                 href="/contact"

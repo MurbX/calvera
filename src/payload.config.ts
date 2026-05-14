@@ -11,10 +11,13 @@ import { Media } from './collections/Media'
 import { Categories } from './collections/Categories'
 import { Brands } from './collections/Brands'
 import { Products } from './collections/Products'
+import { Projects } from './collections/Projects'
 import { Orders } from './collections/Orders'
 import { CalculatorSubmissions } from './collections/CalculatorSubmissions'
 import { Leads } from './collections/Leads'
 import { Customers } from './collections/Customers'
+import { ManualQuotes } from './collections/ManualQuotes'
+import { SiteSettings } from './globals/SiteSettings'
 
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
@@ -66,10 +69,13 @@ export default buildConfig({
     Categories,
     Brands,
     Products,
+    Projects,
     Orders,
     CalculatorSubmissions,
     Leads,
+    ManualQuotes,
   ],
+  globals: [SiteSettings],
   // CORS still uses the explicit allow-list. CSRF is intentionally empty:
   // Payload reads it as "no allow-list, trust the cookie" (see
   // node_modules/payload/dist/auth/extractJWT.js — `csrf.length === 0`

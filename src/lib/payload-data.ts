@@ -238,6 +238,72 @@ export const getCategoryBySlug = cachedQuery(
   ['categories'],
 )
 
+export type ProjectRecord = {
+  id: number | string
+  title: string
+  slug: string
+  category: string
+  location?: string | null
+  capacity?: string | null
+  completedOn?: string | null
+  summary?: string | null
+  /** Resolved image: uploaded media URL first, then the imageUrl fallback. */
+  imageUrl: string | null
+  isFeatured: boolean
+}
+
+type RawProject = {
+  id: number | string
+  title: string
+  slug: string
+  category: string
+  location?: string | null
+  capacity?: string | null
+  completedOn?: string | null
+  summary?: string | null
+  image?: { url?: string | null } | string | number | null
+  imageUrl?: string | null
+  isFeatured?: boolean | null
+}
+
+/**
+ * Published projects for the public /projects page. depth: 1 so the `image`
+ * upload relation is populated — we read its URL, falling back to the plain
+ * `imageUrl` text field when no photo was uploaded.
+ */
+export const getProjects = cachedQuery(
+  async (): Promise<ProjectRecord[]> => {
+    const payload = await getCachedPayload()
+    const result = await payload.find({
+      collection: 'projects',
+      where: { isPublished: { equals: true } },
+      limit: 200,
+      depth: 1,
+      pagination: false,
+      overrideAccess: true,
+      sort: 'order',
+    })
+    return (result.docs as unknown as RawProject[]).map((p) => {
+      const uploaded =
+        p.image && typeof p.image === 'object' ? (p.image.url ?? null) : null
+      return {
+        id: p.id,
+        title: p.title,
+        slug: p.slug,
+        category: p.category,
+        location: p.location ?? null,
+        capacity: p.capacity ?? null,
+        completedOn: p.completedOn ?? null,
+        summary: p.summary ?? null,
+        imageUrl: uploaded ?? p.imageUrl ?? null,
+        isFeatured: Boolean(p.isFeatured),
+      }
+    })
+  },
+  ['projects', 'list'],
+  ['projects'],
+)
+
 export const getProductsByCategory = cachedQuery(
   async (categorySlug: string): Promise<ProductRecord[]> => {
     const payload = await getCachedPayload()

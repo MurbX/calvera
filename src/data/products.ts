@@ -53,7 +53,7 @@ export const CATEGORY_NAV: CategoryNav[] = [
     description: 'Tier-1 mono panels — 585W & 620W',
     tagline: 'Tier-1 monocrystalline solar panels',
     longDescription:
-      'Premium monocrystalline solar panels — 585W and 620W half-cell modules — built for Kenyan rooftops with 25-year power output warranties. KSh 22 per watt.',
+      'Premium monocrystalline solar panels — 585W and 620W half-cell modules — built for residential and commercial rooftops with 25-year power output warranties. KSh 22 per watt.',
   },
   {
     slug: 'inverters',

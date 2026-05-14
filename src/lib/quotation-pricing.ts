@@ -109,3 +109,105 @@ export function priceBreakdown(args: {
     subtotalKes,
   }
 }
+
+// ---------------------------------------------------------------------------
+// Solar water heater
+// ---------------------------------------------------------------------------
+
+/**
+ * Sum a solar water heater BoM into a price breakdown: the tank unit(s) plus
+ * a plumbing + installation line (20% of the unit cost — pipes, mixers,
+ * brackets, fitting and commissioning).
+ */
+export function priceWaterHeaterBreakdown(args: {
+  heater: { name: string; quantity: number; unitPriceKes: number; litres?: number } | null
+}) {
+  const lines: PricedLine[] = []
+
+  if (args.heater) {
+    lines.push({
+      name: args.heater.name,
+      description: args.heater.litres
+        ? `${args.heater.quantity}× ${args.heater.litres} L solar water heater`
+        : undefined,
+      quantity: args.heater.quantity,
+      unitPriceKes: args.heater.unitPriceKes,
+      totalKes: args.heater.unitPriceKes * args.heater.quantity,
+    })
+  }
+
+  const materialsSubtotalKes = lines.reduce((s, l) => s + l.totalKes, 0)
+  const installationKes = installationCostKes(materialsSubtotalKes)
+
+  if (installationKes > 0) {
+    lines.push({
+      name: 'Plumbing & installation',
+      description: '20% of materials · pipes, mixers, brackets · fitting & commissioning',
+      quantity: 1,
+      unitPriceKes: installationKes,
+      totalKes: installationKes,
+    })
+  }
+
+  const subtotalKes = lines.reduce((s, l) => s + l.totalKes, 0)
+
+  return { lines, materialsSubtotalKes, installationKes, subtotalKes }
+}
+
+// ---------------------------------------------------------------------------
+// Solar flood lights
+// ---------------------------------------------------------------------------
+
+/** Supplied + concreted mounting pole, per unit. */
+export const FLOOD_LIGHT_POLE_KES = 6_500
+
+/**
+ * Sum a solar flood light BoM into a price breakdown: the fixtures, any
+ * supplied mounting poles, and an installation line (20% of materials).
+ */
+export function priceFloodLightBreakdown(args: {
+  light: { name: string; quantity: number; unitPriceKes: number; watts?: number } | null
+  poleCount: number
+}) {
+  const lines: PricedLine[] = []
+
+  if (args.light) {
+    lines.push({
+      name: args.light.name,
+      description: args.light.watts
+        ? `${args.light.quantity}× ${args.light.watts} W all-in-one solar flood light`
+        : undefined,
+      quantity: args.light.quantity,
+      unitPriceKes: args.light.unitPriceKes,
+      totalKes: args.light.unitPriceKes * args.light.quantity,
+    })
+  }
+
+  const poleCount = Math.max(0, Math.floor(args.poleCount))
+  if (poleCount > 0) {
+    lines.push({
+      name: 'Mounting poles',
+      description: `${poleCount} pole${poleCount === 1 ? '' : 's'} supplied and concreted`,
+      quantity: poleCount,
+      unitPriceKes: FLOOD_LIGHT_POLE_KES,
+      totalKes: FLOOD_LIGHT_POLE_KES * poleCount,
+    })
+  }
+
+  const materialsSubtotalKes = lines.reduce((s, l) => s + l.totalKes, 0)
+  const installationKes = installationCostKes(materialsSubtotalKes)
+
+  if (installationKes > 0) {
+    lines.push({
+      name: 'Professional installation',
+      description: '20% of materials · vetted installer · wiring · commissioning',
+      quantity: 1,
+      unitPriceKes: installationKes,
+      totalKes: installationKes,
+    })
+  }
+
+  const subtotalKes = lines.reduce((s, l) => s + l.totalKes, 0)
+
+  return { lines, materialsSubtotalKes, installationKes, subtotalKes }
+}

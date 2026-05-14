@@ -8,6 +8,8 @@ import {
 } from './payload-data'
 import { withRetry } from './db-retry'
 import type { Recommendation } from './calculator'
+import type { WaterHeaterRecommendation } from './water-heater-calculator'
+import type { FloodLightRecommendation } from './flood-light-calculator'
 import { getPayload } from 'payload'
 import config from '@payload-config'
 
@@ -32,6 +34,8 @@ const fetchSizingProducts = unstable_cache(
                 { 'category.slug': { equals: 'inverters' } },
                 { 'category.slug': { equals: 'batteries' } },
                 { 'category.slug': { equals: 'accessories' } },
+                { 'category.slug': { equals: 'water-heaters' } },
+                { 'category.slug': { equals: 'flood-lights' } },
               ],
             },
           ],
@@ -167,4 +171,82 @@ export async function buildBom(rec: Recommendation): Promise<SystemBom> {
     (mounting ? mounting.product.price * mounting.quantity : 0)
 
   return { panel, inverter, battery, mounting, estimatedTotalKes }
+}
+
+// ---------------------------------------------------------------------------
+// Solar water heater BoM
+// ---------------------------------------------------------------------------
+
+// Best-effort litres extraction from a product name (e.g. "150L Aquasun ...").
+function nameLitres(p: ProductRecord): number {
+  const m = p.name.match(/(\d+(?:\.\d+)?)\s*L\b/i)
+  if (!m) return 0
+  const n = Number(m[1])
+  return Number.isFinite(n) ? Math.round(n) : 0
+}
+
+export type WaterHeaterBom = {
+  heater: { product: ProductRecord; quantity: number; litres: number } | null
+}
+
+function pickWaterHeater(products: ProductRecord[], targetLitres: number) {
+  const heaters = products.filter(
+    (p) => p.category?.slug === 'water-heaters' && (p.stock ?? 1) > 0,
+  )
+  if (heaters.length === 0) return null
+  // Smallest tank that meets the target; fall back to the largest available.
+  const sorted = [...heaters]
+    .filter((p) => nameLitres(p) > 0)
+    .sort((a, b) => nameLitres(a) - nameLitres(b))
+  const chosen =
+    sorted.find((p) => nameLitres(p) >= targetLitres) ??
+    sorted[sorted.length - 1] ??
+    heaters[0]
+  return { product: chosen, litres: Math.max(1, nameLitres(chosen)) }
+}
+
+export async function buildWaterHeaterBom(
+  rec: WaterHeaterRecommendation,
+): Promise<WaterHeaterBom> {
+  const products = await getSizingProducts()
+  const picked = pickWaterHeater(products, rec.recommendedLitres)
+  if (!picked) return { heater: null }
+  return {
+    heater: { product: picked.product, quantity: rec.unitCount, litres: picked.litres },
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Solar flood light BoM
+// ---------------------------------------------------------------------------
+
+export type FloodLightBom = {
+  light: { product: ProductRecord; quantity: number; watts: number } | null
+}
+
+function pickFloodLight(products: ProductRecord[], targetWatts: number) {
+  const lights = products.filter(
+    (p) => p.category?.slug === 'flood-lights' && (p.stock ?? 1) > 0,
+  )
+  if (lights.length === 0) return null
+  const sorted = [...lights]
+    .filter((p) => nameWatts(p) > 0)
+    .sort((a, b) => nameWatts(a) - nameWatts(b))
+  // Smallest fixture that meets the target wattage; else the brightest stocked.
+  const chosen =
+    sorted.find((p) => nameWatts(p) >= targetWatts) ??
+    sorted[sorted.length - 1] ??
+    lights[0]
+  return { product: chosen, watts: Math.max(1, nameWatts(chosen)) }
+}
+
+export async function buildFloodLightBom(
+  rec: FloodLightRecommendation,
+): Promise<FloodLightBom> {
+  const products = await getSizingProducts()
+  const picked = pickFloodLight(products, rec.recommendedWatts)
+  if (!picked) return { light: null }
+  return {
+    light: { product: picked.product, quantity: rec.fixtureCount, watts: picked.watts },
+  }
 }

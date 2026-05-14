@@ -4,18 +4,28 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
-import { ChevronRight, Lock } from 'lucide-react'
+import { ChevronRight } from 'lucide-react'
 import { useCart } from '@/lib/cart-context'
 import { formatKes } from '@/lib/utils'
 import {
   DELIVERY_OPTIONS,
-  PAYMENT_OPTIONS,
-  deliveryFee,
+  buildWhatsAppOrderMessage,
+  buildWhatsAppUrl,
   type DeliveryMethod,
-  type PaymentMethod,
 } from '@/lib/checkout'
 
 const FALLBACK_IMAGE = '/placeholder-product.svg'
+const BUSINESS_PHONE = process.env.NEXT_PUBLIC_BUSINESS_PHONE ?? '+254 723 284 994'
+
+/** WhatsApp glyph — lucide dropped its brand icons, so we inline it. */
+function WhatsAppIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 32 32" className={className} fill="currentColor" aria-hidden>
+      <path d="M19.11 17.205c-.372 0-1.088 1.39-1.518 1.39a.63.63 0 0 1-.315-.1c-.802-.402-1.504-.817-2.163-1.447-.545-.516-1.146-1.29-1.46-1.963a.426.426 0 0 1-.073-.215c0-.33.99-.945.99-1.49 0-.143-.73-2.09-.832-2.335-.143-.372-.214-.487-.6-.487-.187 0-.36-.043-.53-.043-.302 0-.53.115-.746.315-.688.645-1.032 1.318-1.06 2.264v.114c-.015.99.41 1.95.957 2.78 1.04 1.59 2.18 2.84 3.79 3.834.69.43 2.005 1.348 2.81 1.348.317 0 .76-.215.96-.43.34-.358.62-.788.785-1.27.13-.376.13-.75.07-.9-.03-.07-.6-.36-.945-.5z" />
+      <path d="M16 4C9.373 4 4 9.373 4 16c0 2.119.555 4.18 1.61 5.997L4 28l6.182-1.625A12 12 0 0 0 28 16c0-6.627-5.373-12-12-12zm0 22a9.95 9.95 0 0 1-5.07-1.382l-.363-.215-3.766.99 1.005-3.673-.236-.378A9.96 9.96 0 0 1 6 16c0-5.514 4.486-10 10-10s10 4.486 10 10-4.486 10-10 10z" />
+    </svg>
+  )
+}
 
 export default function CheckoutPage() {
   const router = useRouter()
@@ -26,17 +36,15 @@ export default function CheckoutPage() {
   const [email, setEmail] = useState('')
   const [line1, setLine1] = useState('')
   const [line2, setLine2] = useState('')
-  const [city, setCity] = useState('Nairobi')
-  const [county, setCounty] = useState('Nairobi')
+  const [city, setCity] = useState('')
+  const [county, setCounty] = useState('')
   const [postalCode, setPostalCode] = useState('')
   const [notes, setNotes] = useState('')
   const [delivery, setDelivery] = useState<DeliveryMethod>('same_day_nairobi')
-  const [payment, setPayment] = useState<PaymentMethod>('mpesa_on_delivery')
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  const shipping = deliveryFee(delivery)
-  const grandTotal = total + shipping
+  const grandTotal = total
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -71,7 +79,6 @@ export default function CheckoutPage() {
             notes: notes.trim() || undefined,
           },
           deliveryMethod: delivery,
-          paymentMethod: payment,
           items: items.map((i) => ({
             productId: i.productId,
             name: i.name,
@@ -85,8 +92,39 @@ export default function CheckoutPage() {
         throw new Error(body.error || `Order failed (HTTP ${res.status})`)
       }
       const data = (await res.json()) as { orderNumber: string }
+
+      // Build the pre-filled WhatsApp message while we still have the cart.
+      const message = buildWhatsAppOrderMessage({
+        orderNumber: data.orderNumber,
+        customer: { name: name.trim(), phone: phone.trim(), email: email.trim() || undefined },
+        items: items.map((i) => ({
+          name: i.name,
+          slug: i.slug,
+          quantity: i.quantity,
+          unitPrice: i.price,
+        })),
+        deliveryMethod: delivery,
+        address:
+          delivery === 'pickup_nairobi'
+            ? null
+            : {
+                line1: line1.trim(),
+                line2: line2.trim() || undefined,
+                city: city.trim(),
+                county: county.trim() || undefined,
+                postalCode: postalCode.trim() || undefined,
+                notes: notes.trim() || undefined,
+              },
+        subtotal: total,
+        total: grandTotal,
+        siteUrl: typeof window !== 'undefined' ? window.location.origin : undefined,
+      })
+      const waUrl = buildWhatsAppUrl(BUSINESS_PHONE, message)
+
       clear()
-      router.push(`/checkout/success?order=${encodeURIComponent(data.orderNumber)}&phone=${encodeURIComponent(phone.trim())}`)
+      // Best-effort instant open; the success page has a reliable button too.
+      window.open(waUrl, '_blank', 'noopener,noreferrer')
+      router.push(`/checkout/success?order=${encodeURIComponent(data.orderNumber)}`)
     } catch (err) {
       setError((err as Error).message)
       setSubmitting(false)
@@ -119,18 +157,22 @@ export default function CheckoutPage() {
       </nav>
 
       <h1 className="mt-6 text-3xl font-bold tracking-tight text-fg md:text-4xl">Checkout</h1>
+      <p className="mt-2 max-w-2xl text-sm text-muted">
+        Tell us what you need and we&apos;ll take it from there on WhatsApp — that&apos;s where we
+        confirm availability, payment and delivery.
+      </p>
 
       <form onSubmit={onSubmit} className="mt-8 grid gap-10 lg:grid-cols-[1fr_380px]">
         <div className="space-y-6">
-          <Section title="Customer information" step={1}>
+          <Section title="Your details" step={1}>
             <div className="grid gap-4 sm:grid-cols-2">
               <Field label="Full name" required>
                 <input value={name} onChange={(e) => setName(e.target.value)} required className="input" placeholder="Brian Mutuku" />
               </Field>
-              <Field label="Phone (M-Pesa)" required>
-                <input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} required className="input" placeholder="+254 7XX XXX XXX" />
+              <Field label="Phone (WhatsApp)" required hint="We'll confirm your order on WhatsApp">
+                <input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} required className="input" placeholder="Your WhatsApp number" />
               </Field>
-              <Field label="Email" hint="For order confirmation">
+              <Field label="Email" hint="Optional">
                 <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} className="input" placeholder="you@example.com" />
               </Field>
             </div>
@@ -157,7 +199,7 @@ export default function CheckoutPage() {
                     <div className="flex items-baseline justify-between gap-3">
                       <span className="text-sm font-semibold text-fg">{o.label}</span>
                       <span className="text-sm font-extrabold text-fg">
-                        {o.fee === 0 ? 'Free' : formatKes(o.fee)}
+                        {o.feeLabel}
                       </span>
                     </div>
                     <p className="mt-0.5 text-xs text-muted">{o.hint}</p>
@@ -181,10 +223,10 @@ export default function CheckoutPage() {
                 </Field>
                 <div className="grid gap-4 sm:grid-cols-3">
                   <Field label="Town / City" required>
-                    <input value={city} onChange={(e) => setCity(e.target.value)} required className="input" placeholder="Nairobi" />
+                    <input value={city} onChange={(e) => setCity(e.target.value)} required className="input" placeholder="Your town or city" />
                   </Field>
-                  <Field label="County">
-                    <input value={county} onChange={(e) => setCounty(e.target.value)} className="input" placeholder="Nairobi" />
+                  <Field label="County / Region">
+                    <input value={county} onChange={(e) => setCounty(e.target.value)} className="input" placeholder="Your county or region" />
                   </Field>
                   <Field label="Postal code">
                     <input value={postalCode} onChange={(e) => setPostalCode(e.target.value)} className="input" placeholder="00100" />
@@ -196,42 +238,6 @@ export default function CheckoutPage() {
               </div>
             </Section>
           )}
-
-          <Section title="Payment on delivery" step={delivery === 'pickup_nairobi' ? 3 : 4}>
-            <div className="rounded-xl bg-brand-50 p-4 text-sm text-brand-900">
-              <div className="flex items-center gap-2 font-semibold">
-                <Lock className="h-4 w-4" />
-                You only pay when your order arrives
-              </div>
-              <p className="mt-1 text-xs text-brand-800/80">
-                No upfront payment, no card details. Pay our rider on delivery — choose how
-                below.
-              </p>
-            </div>
-            <div className="mt-4 space-y-2">
-              {PAYMENT_OPTIONS.map((o) => (
-                <label
-                  key={o.id}
-                  className={`flex cursor-pointer items-start gap-3 rounded-xl border p-4 transition ${
-                    payment === o.id ? 'border-brand-800 bg-brand-50' : 'border-border bg-white hover:border-fg/30'
-                  }`}
-                >
-                  <input
-                    type="radio"
-                    name="payment"
-                    value={o.id}
-                    checked={payment === o.id}
-                    onChange={() => setPayment(o.id)}
-                    className="mt-1 accent-brand-800"
-                  />
-                  <div>
-                    <div className="text-sm font-semibold text-fg">{o.label}</div>
-                    <p className="mt-0.5 text-xs text-muted">{o.hint}</p>
-                  </div>
-                </label>
-              ))}
-            </div>
-          </Section>
         </div>
 
         <aside className="lg:sticky lg:top-6 lg:self-start">
@@ -240,15 +246,17 @@ export default function CheckoutPage() {
             <ul className="mt-4 space-y-3">
               {items.map((i) => (
                 <li key={String(i.productId)} className="flex items-center gap-3">
-                  <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-lg bg-soft">
-                    <Image
-                      src={i.imageUrl || FALLBACK_IMAGE}
-                      alt={i.name}
-                      fill
-                      sizes="48px"
-                      className="object-contain p-1.5"
-                    />
-                    <span className="absolute -right-1 -top-1 grid h-5 min-w-5 place-items-center rounded-full bg-brand-800 px-1 text-[10px] font-bold text-white">
+                  <div className="relative h-12 w-12 shrink-0">
+                    <div className="h-full w-full overflow-hidden rounded-lg bg-soft">
+                      <Image
+                        src={i.imageUrl || FALLBACK_IMAGE}
+                        alt={i.name}
+                        fill
+                        sizes="48px"
+                        className="object-contain p-1.5"
+                      />
+                    </div>
+                    <span className="absolute -right-1 -top-1 z-10 grid h-5 min-w-5 place-items-center rounded-full bg-brand-800 px-1 text-[10px] font-bold text-white">
                       {i.quantity}
                     </span>
                   </div>
@@ -265,20 +273,24 @@ export default function CheckoutPage() {
 
             <dl className="mt-5 space-y-2 border-t border-border pt-4 text-sm">
               <Row label={`Subtotal (${count})`} value={formatKes(total)} />
-              <Row label="Delivery" value={shipping === 0 ? 'Free' : formatKes(shipping)} />
+              <Row label="Delivery" value="Confirmed on WhatsApp" />
             </dl>
             <div className="mt-3 flex items-baseline justify-between border-t border-border pt-3">
-              <span className="text-sm font-semibold text-fg">Total</span>
+              <span className="text-sm font-semibold text-fg">Total (excl. delivery)</span>
               <span className="text-2xl font-extrabold text-brand-800">{formatKes(grandTotal)}</span>
             </div>
 
             <button
               type="submit"
               disabled={submitting}
-              className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-full bg-brand-800 px-6 py-3 text-sm font-bold text-white transition hover:bg-brand-700 disabled:cursor-not-allowed disabled:opacity-60"
+              className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-full bg-[#25D366] px-6 py-3 text-sm font-bold text-white transition hover:bg-[#1ebe5a] disabled:cursor-not-allowed disabled:opacity-60"
             >
-              {submitting ? 'Placing order…' : `Place order • ${formatKes(grandTotal)}`}
+              <WhatsAppIcon className="h-5 w-5" />
+              {submitting ? 'Placing order…' : 'Send order on WhatsApp'}
             </button>
+            <p className="mt-2 text-center text-[11px] text-muted">
+              No payment now — we confirm everything with you on WhatsApp.
+            </p>
 
             {error && (
               <p className="mt-3 rounded-lg bg-rose-50 px-3 py-2 text-xs text-rose-700">{error}</p>

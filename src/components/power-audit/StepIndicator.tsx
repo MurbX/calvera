@@ -1,16 +1,22 @@
 import { Check } from 'lucide-react'
-import type { Step } from '@/lib/power-audit-types'
+import { AUDIT_TYPE_META, type AuditType, type Step } from '@/lib/power-audit-types'
 
-const STEPS: { id: Step; label: string }[] = [
-  { id: 1, label: 'About you' },
-  { id: 2, label: 'Power needs' },
-  { id: 3, label: 'Quotation' },
-]
+export function StepIndicator({
+  current,
+  auditType,
+}: {
+  current: Step
+  auditType: AuditType
+}) {
+  const steps: { id: Step; label: string }[] = [
+    { id: 1, label: 'About you' },
+    { id: 2, label: AUDIT_TYPE_META[auditType].needsStepLabel },
+    { id: 3, label: 'Quotation' },
+  ]
 
-export function StepIndicator({ current }: { current: Step }) {
   return (
     <ol className="flex flex-wrap items-center gap-2 text-xs sm:gap-3">
-      {STEPS.map((s) => {
+      {steps.map((s) => {
         const isDone = current > s.id
         const isActive = current === s.id
         return (

@@ -1,37 +1,21 @@
 import { NextResponse } from 'next/server'
-import { promises as fs } from 'node:fs'
-import path from 'node:path'
 import { renderToBuffer } from '@react-pdf/renderer'
-import { computeRecommendation, type ApplianceInput } from '@/lib/calculator'
-import { buildBom } from '@/lib/sizing-products'
-import { priceBreakdown } from '@/lib/quotation-pricing'
-import { QuotationPDFv2, type QuotationLineItem } from '@/components/QuotationPDFv2'
-
-let cachedLogo: string | null = null
-async function loadLogoDataUri(): Promise<string | null> {
-  if (cachedLogo !== null) return cachedLogo
-  try {
-    const file = path.resolve(process.cwd(), 'public/brand/calvera-logo.png')
-    const buf = await fs.readFile(file)
-    cachedLogo = `data:image/png;base64,${buf.toString('base64')}`
-    return cachedLogo
-  } catch (err) {
-    console.warn('[power-audit/quote] could not load logo:', err)
-    return null
-  }
-}
+import {
+  buildRecommendation,
+  parseRecommendationInput,
+} from '@/lib/power-audit-recommend'
+import { QuotationPDFv2 } from '@/components/QuotationPDFv2'
+import { loadLogoDataUri } from '@/lib/logo'
+import { getSiteSettings } from '@/lib/site-settings'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 
-type Body = {
-  customer: {
-    name?: string
-    phone?: string
-    email?: string
-    address?: string
-  }
-  appliances: ApplianceInput[]
+type CustomerBody = {
+  name?: string
+  phone?: string
+  email?: string
+  address?: string
 }
 
 function quotationNumber() {
@@ -40,101 +24,62 @@ function quotationNumber() {
   return `CTS-${yyyymmdd}-${rand}`
 }
 
+/**
+ * Renders a branded PDF quotation for any Power Audit service. The body
+ * carries `{ type, customer, appliances | needs }`.
+ */
 export async function POST(request: Request) {
-  let body: Body
+  let raw: unknown
   try {
-    body = (await request.json()) as Body
+    raw = await request.json()
   } catch {
     return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 })
   }
 
+  const body = (raw ?? {}) as { customer?: CustomerBody }
   const name = body.customer?.name?.trim()
   const phone = body.customer?.phone?.trim()
   if (!name || !phone) {
-    return NextResponse.json({ error: 'Customer name and phone are required.' }, { status: 400 })
-  }
-  const cleaned = (body.appliances ?? [])
-    .filter((a) => a.name?.trim() && a.wattage > 0 && a.quantity > 0)
-    .map((a) => ({
-      name: a.name.trim(),
-      wattage: Number(a.wattage),
-      quantity: Number(a.quantity),
-      hoursPerDay: Number(a.hoursPerDay),
-    }))
-  if (cleaned.length === 0) {
-    return NextResponse.json({ error: 'At least one appliance is required.' }, { status: 400 })
+    return NextResponse.json(
+      { error: 'Customer name and phone are required.' },
+      { status: 400 },
+    )
   }
 
-  const recommendation = computeRecommendation(cleaned)
-  const bom = await buildBom(recommendation)
+  const input = parseRecommendationInput(raw)
+  if ('error' in input) {
+    return NextResponse.json({ error: input.error }, { status: 400 })
+  }
+
+  const recommendation = await buildRecommendation(input)
   const number = quotationNumber()
   const date = new Date().toLocaleDateString('en-KE', {
     year: 'numeric',
     month: 'long',
     day: 'numeric',
   })
-
-  const pricing = priceBreakdown({
-    panel: bom.panel
-      ? {
-          name: bom.panel.product.name,
-          quantity: bom.panel.quantity,
-          unitPriceKes: bom.panel.product.price,
-          totalWatts: bom.panel.totalWatts,
-        }
-      : null,
-    inverter: bom.inverter
-      ? {
-          name: bom.inverter.product.name,
-          quantity: bom.inverter.quantity,
-          unitPriceKes: bom.inverter.product.price,
-        }
-      : null,
-    battery: bom.battery
-      ? {
-          name: bom.battery.product.name,
-          quantity: bom.battery.quantity,
-          unitPriceKes: bom.battery.product.price,
-          totalWh: bom.battery.totalWh,
-        }
-      : null,
-  })
-
-  const items: QuotationLineItem[] = pricing.lines.map((line) => ({
-    qty: line.quantity,
-    product: line.name,
-    description: line.description,
-    unitPriceKes: line.unitPriceKes,
-    totalKes: line.totalKes,
-  }))
-
-  const subtotal = pricing.subtotalKes
-
   const logoSrc = await loadLogoDataUri()
+  const settings = await getSiteSettings()
 
   const pdf = await renderToBuffer(
     QuotationPDFv2({
       quotationNumber: number,
       date,
       logoSrc,
+      quoteKind: recommendation.quoteKind,
       customer: {
         name,
         phone,
         email: body.customer?.email?.trim() || undefined,
         address: body.customer?.address?.trim() || undefined,
       },
-      systemSummary: {
-        panelWattsTotal: recommendation.panelWattsTotal,
-        inverterWatts: recommendation.inverterWatts,
-        batteryWh: recommendation.batteryWh,
-        dailyEnergyWh: recommendation.dailyEnergyWh,
-      },
-      items,
-      subtotalKes: subtotal,
+      systemSummary: recommendation.summary,
+      items: recommendation.pdfItems,
+      subtotalKes: recommendation.estimatedTotalKes,
       business: {
         name: 'Calvera Tech Solutions',
-        phone: process.env.NEXT_PUBLIC_BUSINESS_PHONE ?? '+254 723 284 994',
-        email: process.env.NEXT_PUBLIC_BUSINESS_EMAIL ?? 'hello@calvera.tech',
+        phone: settings.whatsappPhone,
+        email: settings.businessEmail,
       },
       notes: recommendation.notes,
     }),

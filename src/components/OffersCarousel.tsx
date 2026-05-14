@@ -91,7 +91,7 @@ export function OffersCarousel({ offers }: { offers: Offer[] }) {
     <section className="mx-auto max-w-350 px-4 pt-16 sm:px-6">
       <div className="flex items-end justify-between gap-4">
         <h2 className="text-2xl font-bold tracking-tight text-fg md:text-3xl">
-          Nairobi Solar Offers & Packages
+          Solar Offers & Packages
         </h2>
         <div className="flex items-center gap-2">
           <button

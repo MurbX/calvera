@@ -29,13 +29,14 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 }
 
 const DELIVERY_LABEL: Record<string, string> = {
-  same_day_nairobi: 'Same-day Nairobi delivery',
-  standard_countrywide: 'Standard countrywide delivery',
-  pickup_nairobi: 'Pickup at our Nairobi office',
+  same_day_nairobi: 'Same-day local delivery',
+  standard_countrywide: 'Standard courier delivery',
+  pickup_nairobi: 'Pickup at our office',
 }
 
 const PAYMENT_LABEL: Record<string, string> = {
-  mpesa_on_delivery: 'M-Pesa on delivery',
+  whatsapp: 'Arranged on WhatsApp',
+  mpesa_on_delivery: 'Mobile money on delivery',
   cash_on_delivery: 'Cash on delivery',
 }
 

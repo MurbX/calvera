@@ -61,8 +61,8 @@ export default async function ShopPage({ searchParams }: Props) {
 
   const heading =
     validCatSlugs.length === 1
-      ? categories.find((c) => c.slug === validCatSlugs[0])?.name ?? "Kenya's Solar Products"
-      : "Kenya's Solar Products"
+      ? categories.find((c) => c.slug === validCatSlugs[0])?.name ?? "Our Solar Products"
+      : "Our Solar Products"
 
   return (
     <div className="mx-auto max-w-350 px-4 py-10 sm:px-6">

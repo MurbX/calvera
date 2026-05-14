@@ -71,7 +71,7 @@ export const Customers: CollectionConfig = {
       type: 'text',
       admin: {
         description:
-          'M-Pesa-capable Safaricom number. Format: 07XX XXX XXX or +254 7XX XXX XXX.',
+          'Phone number for delivery and payment. Format: 07XX XXX XXX or +254 7XX XXX XXX.',
       },
     },
     {

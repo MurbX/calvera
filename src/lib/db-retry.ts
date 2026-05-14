@@ -14,7 +14,7 @@ import 'server-only'
  * non-transient errors (auth failures, schema errors, query bugs) surface
  * immediately so we don't mask real bugs.
  */
-export async function withRetry<T>(fn: () => Promise<T>, attempts = 2): Promise<T> {
+export async function withRetry<T>(fn: () => Promise<T>, attempts = 3): Promise<T> {
   let lastErr: unknown
   for (let i = 0; i < attempts; i++) {
     try {
@@ -26,12 +26,16 @@ export async function withRetry<T>(fn: () => Promise<T>, attempts = 2): Promise<
         msg.includes('Failed query') ||
         msg.includes('Connection terminated') ||
         msg.includes('connection terminated') ||
+        msg.includes('connection timeout') ||
+        msg.includes('cannot connect to Postgres') ||
         msg.includes('ECONNRESET') ||
         msg.includes('ETIMEDOUT') ||
+        msg.includes('ECONNREFUSED') ||
         msg.includes('socket hang up') ||
         msg.includes('Client has encountered a connection error')
       if (!transient || i === attempts - 1) throw err
-      await new Promise((r) => setTimeout(r, 200 * (i + 1)))
+      // Exponential backoff: 500ms, 1.5s — gives Neon time to cold-start
+      await new Promise((r) => setTimeout(r, 500 * (i + 1)))
     }
   }
   throw lastErr

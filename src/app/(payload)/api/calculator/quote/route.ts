@@ -4,6 +4,7 @@ import { getPayload } from 'payload'
 import config from '@payload-config'
 import { computeRecommendation, type ApplianceInput } from '@/lib/calculator'
 import { QuotationPDF } from '@/components/QuotationPDF'
+import { getSiteSettings } from '@/lib/site-settings'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -88,6 +89,8 @@ export async function POST(request: Request) {
     console.error('[calculator/quote] failed to persist submission', err)
   }
 
+  const settings = await getSiteSettings()
+
   const pdf = await renderToBuffer(
     QuotationPDF({
       quotationNumber: number,
@@ -101,8 +104,8 @@ export async function POST(request: Request) {
       appliances: cleanedAppliances,
       recommendation,
       business: {
-        phone: process.env.NEXT_PUBLIC_BUSINESS_PHONE || '+254 700 000 000',
-        email: process.env.NEXT_PUBLIC_BUSINESS_EMAIL || 'hello@calvera.tech',
+        phone: settings.whatsappPhone,
+        email: settings.businessEmail,
       },
     }),
   )

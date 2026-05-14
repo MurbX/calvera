@@ -21,11 +21,13 @@ import { StrikethroughFeatureClient as StrikethroughFeatureClient_e70f5e05f09f93
 import { UnderlineFeatureClient as UnderlineFeatureClient_e70f5e05f09f93e00b997edb1ef0c864 } from '@payloadcms/richtext-lexical/client'
 import { BoldFeatureClient as BoldFeatureClient_e70f5e05f09f93e00b997edb1ef0c864 } from '@payloadcms/richtext-lexical/client'
 import { ItalicFeatureClient as ItalicFeatureClient_e70f5e05f09f93e00b997edb1ef0c864 } from '@payloadcms/richtext-lexical/client'
+import { DownloadQuotePDF as DownloadQuotePDF_ed00a76f39ba75c3eda4c01db1d15223 } from '../../../components/admin/DownloadQuotePDF.tsx'
+import { SecretField as SecretField_a50cdb371aa3ed8293d3a2c813ede53a } from '../../../components/admin/SecretField.tsx'
 import { Nav as Nav_f1b19b86f6b08148220e6266f4de6231 } from '../../../components/admin/Nav.tsx'
 import { Icon as Icon_22ecfa0add6ea3a2202bd7524740e10d } from '../../../components/admin/Icon.tsx'
 import { Logo as Logo_f6725385e1c85d4569908fa222b1f780 } from '../../../components/admin/Logo.tsx'
+import { VercelBlobClientUploadHandler as VercelBlobClientUploadHandler_16c82c5e25f430251a3e3ba57219ff4e } from '@payloadcms/storage-vercel-blob/client'
 import { CollectionCards as CollectionCards_f9c02e79a4aed9a3924487c0cd4cafb1 } from '@payloadcms/next/rsc'
-import { VercelBlobClientUploadHandler as VercelBlobClientUploadHandler_VBSTORAGE_a1b2c3 } from '@payloadcms/storage-vercel-blob/client'
 
 /** @type import('payload').ImportMap */
 export const importMap = {
@@ -52,9 +54,11 @@ export const importMap = {
   "@payloadcms/richtext-lexical/client#UnderlineFeatureClient": UnderlineFeatureClient_e70f5e05f09f93e00b997edb1ef0c864,
   "@payloadcms/richtext-lexical/client#BoldFeatureClient": BoldFeatureClient_e70f5e05f09f93e00b997edb1ef0c864,
   "@payloadcms/richtext-lexical/client#ItalicFeatureClient": ItalicFeatureClient_e70f5e05f09f93e00b997edb1ef0c864,
+  "/components/admin/DownloadQuotePDF.tsx#DownloadQuotePDF": DownloadQuotePDF_ed00a76f39ba75c3eda4c01db1d15223,
+  "/components/admin/SecretField.tsx#SecretField": SecretField_a50cdb371aa3ed8293d3a2c813ede53a,
   "/components/admin/Nav.tsx#Nav": Nav_f1b19b86f6b08148220e6266f4de6231,
   "/components/admin/Icon.tsx#Icon": Icon_22ecfa0add6ea3a2202bd7524740e10d,
   "/components/admin/Logo.tsx#Logo": Logo_f6725385e1c85d4569908fa222b1f780,
-  "@payloadcms/next/rsc#CollectionCards": CollectionCards_f9c02e79a4aed9a3924487c0cd4cafb1,
-  "@payloadcms/storage-vercel-blob/client#VercelBlobClientUploadHandler": VercelBlobClientUploadHandler_VBSTORAGE_a1b2c3
+  "@payloadcms/storage-vercel-blob/client#VercelBlobClientUploadHandler": VercelBlobClientUploadHandler_16c82c5e25f430251a3e3ba57219ff4e,
+  "@payloadcms/next/rsc#CollectionCards": CollectionCards_f9c02e79a4aed9a3924487c0cd4cafb1
 }

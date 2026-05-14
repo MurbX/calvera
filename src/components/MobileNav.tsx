@@ -101,7 +101,7 @@ export function MobileNav({ categories, customer }: Props) {
                 onClick={close}
                 className="flex w-full items-center justify-center gap-2 rounded-full bg-brand-800 px-4 py-3 text-sm font-semibold text-white transition hover:bg-brand-700"
               >
-                <Calculator className="h-4 w-4" /> Power Audit
+                <Calculator className="h-4 w-4" /> Get a Quote
               </Link>
 
               <ul className="mt-5 space-y-1">
@@ -136,6 +136,7 @@ export function MobileNav({ categories, customer }: Props) {
               </p>
               <ul className="mt-2 space-y-1">
                 <RowLink href="/installation" label="Installation" onClick={close} Icon={Wrench} />
+                <RowLink href="/projects" label="Projects" onClick={close} />
                 <RowLink href="/about" label="About" onClick={close} />
                 <RowLink href="/contact" label="Contact" onClick={close} />
               </ul>

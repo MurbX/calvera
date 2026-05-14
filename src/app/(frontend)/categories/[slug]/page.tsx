@@ -50,11 +50,21 @@ export default async function CategoryPage({ params }: Props) {
   const category = (await getCategoryBySlug(slug)) as CategoryRecordWithTagline
   if (!category) notFound()
 
-  const [items, allCategories, counts] = await Promise.all([
+  const [itemsR, allCategoriesR, countsR] = await Promise.allSettled([
     getProductsByCategory(category.slug),
     getCategories(),
     getProductCountsByCategory(),
   ])
+  const items = itemsR.status === 'fulfilled' ? itemsR.value : []
+  const allCategories = allCategoriesR.status === 'fulfilled' ? allCategoriesR.value : []
+  const counts = countsR.status === 'fulfilled' ? countsR.value : {}
+  if (itemsR.status === 'rejected' || allCategoriesR.status === 'rejected' || countsR.status === 'rejected') {
+    console.error('[category detail] partial fetch failure', {
+      items: itemsR.status === 'rejected' ? itemsR.reason : null,
+      categories: allCategoriesR.status === 'rejected' ? allCategoriesR.reason : null,
+      counts: countsR.status === 'rejected' ? countsR.reason : null,
+    })
+  }
   const Icon = CATEGORY_ICONS[category.slug] ?? SolarPanel
   const otherCategories = allCategories.filter((c) => c.slug !== category.slug)
 
@@ -88,7 +98,7 @@ export default async function CategoryPage({ params }: Props) {
               )}
               <div className="mt-6 flex flex-wrap items-center gap-4 text-sm text-fg/80">
                 <span className="flex items-center gap-1.5">
-                  <Truck className="h-4 w-4 text-brand-700" /> Same-day Nairobi delivery
+                  <Truck className="h-4 w-4 text-brand-700" /> Same-day local delivery
                 </span>
                 <span className="flex items-center gap-1.5">
                   <Wrench className="h-4 w-4 text-brand-700" /> Pro install on request
